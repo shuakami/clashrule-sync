@@ -1,0 +1,1936 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClashRuleSync - Clash 规则自动同步工具</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* 主色调 */
+            --primary: #3b82f6;
+            --primary-light: #dbeafe;
+            --primary-dark: #1d4ed8;
+            --primary-gradient: linear-gradient(135deg, #3b82f6, #6366f1);
+            
+            /* 文本颜色 */
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --text-tertiary: #6b7280;
+            
+            /* 背景和卡片 */
+            --background: #f8fafc;
+            --card: #ffffff;
+            --card-hover: #f9fafb;
+            
+            /* 边框和阴影 */
+            --border: #e2e8f0;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 6px rgba(0,0,0,0.02);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.04), 0 1px 8px rgba(0,0,0,0.02);
+            --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.05), 0 10px 10px -5px rgba(0,0,0,0.01);
+            
+            /* 状态颜色 */
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --error: #ef4444;
+            --error-light: #fee2e2;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --info: #3b82f6;
+            --info-light: #dbeafe;
+            
+            /* 圆角 */
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            
+            /* 动画 */
+            --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: var(--background);
+            padding: 40px 20px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 880px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 36px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .app-title {
+            display: flex;
+            align-items: center;
+        }
+
+        .app-logo {
+            width: 40px;
+            height: 40px;
+            margin-right: 14px;
+            background-color: var(--primary);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.15);
+        }
+        
+        .app-logo:before, 
+        .app-logo:after {
+            content: "";
+            position: absolute;
+            background-color: white;
+        }
+        
+        .app-logo:before {
+            width: 20px;
+            height: 4px;
+            top: 13px;
+            left: 10px;
+            border-radius: 2px;
+        }
+        
+        .app-logo:after {
+            width: 20px;
+            height: 4px;
+            top: 22px;
+            left: 10px;
+            border-radius: 2px;
+        }
+
+        .title {
+            font-size: 36px;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+
+        .version {
+            font-size: 14px;
+            color: var(--primary);
+            padding: 6px 12px;
+            background-color: var(--primary-light);
+            border-radius: var(--radius-md);
+            font-weight: 500;
+        }
+
+        .card {
+            background-color: var(--card);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-md);
+            padding: 32px;
+            margin-bottom: 32px;
+            transition: var(--transition);
+            border: 1px solid var(--border);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+        
+        .status {
+            padding: 6px 14px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .status::before {
+            content: "";
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-connected {
+            background-color: var(--success-light);
+            color: var(--success);
+        }
+        
+        .status-connected::before {
+            background-color: var(--success);
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+        }
+        
+        .status-disconnected {
+            background-color: var(--error-light);
+            color: var(--error);
+        }
+        
+        .status-disconnected::before {
+            background-color: var(--error);
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+        }
+        
+        .status-process-only {
+            background-color: var(--warning-light);
+            color: var(--warning);
+        }
+        
+        .status-process-only::before {
+            background-color: var(--warning);
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+        }
+        
+        .status-updating {
+            background-color: var(--warning-light);
+            color: var(--warning);
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status-updating::before {
+            background-color: var(--warning);
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+        }
+        
+        @keyframes pulse {
+            0% {
+                opacity: 0.7;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0.7;
+            }
+        }
+        
+        .flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        h2 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+        
+        button {
+            padding: 12px 25px;
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            outline: none;
+            position: relative;
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+        }
+        
+        button:hover {
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        button:disabled {
+            background: #d1d5db;
+            color: #9ca3af;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        
+        button.secondary {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            box-shadow: none;
+            border: 1px solid transparent;
+        }
+        
+        button.secondary:hover {
+            background-color: var(--primary-dark);
+            color: white;
+        }
+        
+        button.outline {
+            background-color: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            box-shadow: none;
+        }
+        
+        button.outline:hover {
+            background-color: var(--background);
+            border-color: var(--text-secondary);
+        }
+        
+        button.danger {
+            background: linear-gradient(135deg, var(--error), #dc2626);
+            box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+        }
+        
+        button.danger:hover {
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+        }
+        
+        .time-info {
+            margin-top: 24px;
+            display: flex;
+            gap: 24px;
+        }
+        
+        .time-item {
+            flex: 1;
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+        
+        .time-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .time-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        .time-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .history-container {
+            margin-top: 14px;
+        }
+        
+        .history-item {
+            padding: 16px;
+            border-radius: var(--radius-md);
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            margin-bottom: 12px;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+        
+        .history-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .history-date {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .provider-item {
+            padding: 10px;
+            background-color: var(--background);
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .provider-name {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+        
+        .provider-success {
+            color: var(--success);
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .provider-error {
+            color: var(--error);
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            color: var(--text-primary);
+            background-color: var(--card);
+            transition: var(--transition);
+            outline: none;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .form-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--primary-light);
+        }
+        
+        .form-help {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+        
+        select.form-input {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+        }
+        .history-entry {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .history-time {
+            font-weight: 500;
+            color: #34495e;
+            margin-bottom: 5px;
+        }
+        .history-details {
+            font-size: 14px;
+            margin-left: 15px;
+        }
+        .success-item {
+            color: #27ae60;
+        }
+        .failed-item {
+            color: #e74c3c;
+        }
+        .setting-group {
+            margin-bottom: 15px;
+        }
+        .setting-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border);
+            transition: .3s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+        .hidden {
+            display: none;
+        }
+        
+        /* 引导模态窗口样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.85);
+            animation: fadeIn 0.25s ease;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+        
+        .modal-content {
+            background-color: var(--card);
+            margin: 5% auto;
+            padding: 32px;
+            border-radius: var(--radius-lg);
+            max-width: 600px;
+            box-shadow: var(--shadow-lg);
+            animation: slideUp 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+        
+        .modal-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+            background: linear-gradient(135deg, var(--primary), #5b21b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .modal-body {
+            margin-bottom: 28px;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        
+        .step {
+            display: none;
+        }
+        
+        .step.active {
+            display: block;
+        }
+        
+        .rule-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 20px;
+            box-shadow: var(--shadow-sm);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+        
+        .rule-table th {
+            text-align: left;
+            padding: 16px 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            background-color: var(--background);
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+        
+        .rule-table th:first-child {
+            border-top-left-radius: var(--radius-md);
+        }
+        
+        .rule-table th:last-child {
+            border-top-right-radius: var(--radius-md);
+        }
+        
+        .rule-table td {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            transition: var(--transition);
+            background-color: var(--card);
+        }
+        
+        .rule-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .rule-table tr {
+            transition: var(--transition);
+        }
+        
+        .rule-table tr:hover td {
+            background-color: transparent;
+        }
+        
+        .rule-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .rule-actions button {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+        
+        .rule-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+        }
+        
+        .rule-name::before {
+            content: "";
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            margin-right: 10px;
+        }
+        
+        .rule-type {
+            color: var(--text-secondary);
+            font-size: 14px;
+            padding: 4px 10px;
+            background-color: var(--background);
+            border-radius: var(--radius-sm);
+            display: inline-block;
+        }
+        
+        .tutorial-card {
+            display: none;
+            margin-top: 20px;
+            padding: 24px;
+            background-color: rgba(245, 158, 11, 0.08);
+            border-radius: var(--radius-md);
+            border-left: 4px solid var(--warning);
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .tutorial-title {
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--warning);
+        }
+        
+        .tutorial-step {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .tutorial-step:before {
+            content: "•";
+            position: absolute;
+            left: 5px;
+            color: #856404;
+        }
+        
+        .accordion {
+            margin-top: 15px;
+        }
+        
+        .accordion-header {
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 5px;
+        }
+        
+        .accordion-header:hover {
+            background-color: #e9ecef;
+        }
+        
+        .accordion-content {
+            display: none;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            margin-top: -5px;
+            margin-bottom: 10px;
+        }
+        
+        .accordion-header.active {
+            border-radius: 4px 4px 0 0;
+            background-color: #e9ecef;
+        }
+        
+        .history-container {
+            max-height: 400px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+        }
+        
+        .history-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .history-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .history-container::-webkit-scrollbar-thumb {
+            background-color: var(--border);
+            border-radius: 3px;
+        }
+        
+        .history-entry {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .history-entry:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        
+        .history-time {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            font-size: 15px;
+        }
+        
+        .history-time:before {
+            content: "";
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), #5b21b6);
+            margin-right: 8px;
+        }
+        
+        .history-details {
+            margin-left: 18px;
+        }
+        
+        .success-item {
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .success-item:before {
+            content: "✓";
+            margin-right: 8px;
+            font-weight: 700;
+        }
+        
+        .failed-item {
+            color: var(--error);
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .failed-item:before {
+            content: "✕";
+            margin-right: 8px;
+            font-weight: 700;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 20px;
+            }
+            
+            .time-info {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .modal-content {
+                width: 90%;
+                padding: 24px;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+        }
+        
+        /* 开关样式 */
+        .toggle-switch {
+            position: relative;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            margin: 8px 0;
+            padding: 8px 0;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            position: absolute;
+        }
+        
+        .toggle-slider {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+            background-color: #ccc;
+            border-radius: 34px;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: var(--primary);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        
+        .toggle-label {
+            margin-left: 12px;
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+        
+        /* 消息通知 */
+        .message {
+            padding: 16px;
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .message-icon {
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        
+        .message-content {
+            flex: 1;
+        }
+        
+        .message-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .message-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .message-success {
+            background-color: var(--success-light);
+            border-left: 4px solid var(--success);
+        }
+        
+        .message-success .message-title {
+            color: var(--success);
+        }
+        
+        .message-error {
+            background-color: var(--error-light);
+            border-left: 4px solid var(--error);
+        }
+        
+        .message-error .message-title {
+            color: var(--error);
+        }
+        
+        .message-warning {
+            background-color: var(--warning-light);
+            border-left: 4px solid var(--warning);
+        }
+        
+        .message-warning .message-title {
+            color: var(--warning);
+        }
+        
+        .message-info {
+            background-color: var(--info-light);
+            border-left: 4px solid var(--info);
+        }
+        
+        .message-info .message-title {
+            color: var(--info);
+        }
+        
+        /* 动画 */
+        @keyframes fadeInScale {
+            0% {
+                opacity: 0;
+                transform: scale(0.98);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .animate-fade-in {
+            animation: fadeInScale 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">ClashRuleSync</h1>
+            <span class="version">{{.Version}}</span>
+        </div>
+
+        <div class="card">
+            <div class="flex">
+                <h2>Clash 连接状态</h2>
+                <span id="clash-status" class="status status-disconnected">检测中...</span>
+            </div>
+            <p id="status-message" style="margin: 14px 0; color: var(--text-secondary);">正在检测 Clash 状态...</p>
+            
+            <!-- API教程卡片，默认隐藏 -->
+            <div id="api-tutorial-card" class="tutorial-card">
+                <div class="tutorial-title">如何启用Clash API</div>
+                <p>检测到Clash正在运行，但无法连接到API。请根据您使用的Clash客户端启用API：</p>
+                
+                <div class="accordion">
+                    <div class="accordion-header" onclick="toggleAccordion('cfw-tutorial')">Clash for Windows</div>
+                    <div id="cfw-tutorial" class="accordion-content">
+                        <div class="tutorial-step">打开Clash for Windows</div>
+                        <div class="tutorial-step">点击左侧菜单中的"设置"（齿轮图标）</div>
+                        <div class="tutorial-step">在"开发者设置"区域，确保"允许局域网连接"已启用</div>
+                        <div class="tutorial-step">记下"控制台端口"的值（默认为9090）</div>
+                        <div class="tutorial-step">如果显示了"API密钥"，也请记下这个值</div>
+                        <div class="tutorial-step">在本页面的"设置"部分，更新API地址为 http://127.0.0.1:端口号 并保存</div>
+                        <div class="tutorial-step">注意：程序将自动尝试从配置文件 <code>%USERPROFILE%\.config\clash\config.yaml</code> 中读取API配置</div>
+                    </div>
+                </div>
+                
+                <div class="accordion">
+                    <div class="accordion-header" onclick="toggleAccordion('meta-tutorial')">Clash.Meta</div>
+                    <div id="meta-tutorial" class="accordion-content">
+                        <div class="tutorial-step">打开Clash.Meta的配置文件（config.yaml）</div>
+                        <div class="tutorial-step">确保配置中包含以下内容：</div>
+                        <pre>external-controller: 127.0.0.1:9090
+secret: "你的密钥"（可选）</pre>
+                        <div class="tutorial-step">保存配置文件并重启Clash.Meta</div>
+                        <div class="tutorial-step">在本页面的"设置"部分，更新API地址和密钥</div>
+                    </div>
+                </div>
+                
+                <div class="accordion">
+                    <div class="accordion-header" onclick="toggleAccordion('verge-tutorial')">Clash Verge</div>
+                    <div id="verge-tutorial" class="accordion-content">
+                        <div class="tutorial-step">打开Clash Verge</div>
+                        <div class="tutorial-step">点击左下角"设置"图标</div>
+                        <div class="tutorial-step">选择"系统设置"选项卡</div>
+                        <div class="tutorial-step">找到"混合控制端口"（通常是9090）</div>
+                        <div class="tutorial-step">在本页面的"设置"部分，更新API地址为 http://127.0.0.1:端口号</div>
+                    </div>
+                </div>
+                
+                <div class="accordion">
+                    <div class="accordion-header" onclick="toggleAccordion('openclash-tutorial')">OpenClash</div>
+                    <div id="openclash-tutorial" class="accordion-content">
+                        <div class="tutorial-step">登录到OpenWrt管理界面</div>
+                        <div class="tutorial-step">进入"服务"->"OpenClash"->"全局设置"->"控制设置"</div>
+                        <div class="tutorial-step">确保"启用控制"已勾选</div>
+                        <div class="tutorial-step">查看"控制端口"（默认为9090）</div>
+                        <div class="tutorial-step">在本页面的"设置"部分，更新API地址为 http://路由器IP:端口号</div>
+                    </div>
+                </div>
+                
+                <div class="accordion">
+                    <div class="accordion-header" onclick="toggleAccordion('manual-config')">手动修改配置文件</div>
+                    <div id="manual-config" class="accordion-content">
+                        <div class="tutorial-step">Clash的配置文件通常位于：</div>
+                        <ul style="padding-left: 40px; margin: 10px 0;">
+                            <li><code>%USERPROFILE%\.config\clash\config.yaml</code></li>
+                            <li><code>%APPDATA%\Clash for Windows\config.yaml</code></li>
+                        </ul>
+                        <div class="tutorial-step">在配置文件中找到或添加以下配置：</div>
+                        <pre>external-controller: 127.0.0.1:端口号
+secret: "你的密钥"（可选）</pre>
+                        <div class="tutorial-step">保存配置文件并重启Clash</div>
+                        <div class="tutorial-step">在本页面的"设置"部分，填写相同的API地址和密钥</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 15px; padding: 10px; background-color: #e9ecef; border-radius: 5px;">
+                    <p style="margin: 0;"><strong>提示：</strong> 本程序会自动尝试从常见位置检测Clash API配置，但如果您使用了非标准配置或修改过默认端口，可能需要手动配置。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="flex">
+                <h2>规则更新</h2>
+                <button id="update-btn">立即更新规则</button>
+            </div>
+            <div class="time-info">
+                <div class="time-item">
+                    <span class="time-label">上次更新时间</span>
+                    <span id="last-update-time" class="time-value">{{.LastUpdateTime}}</span>
+                </div>
+                <div class="time-item">
+                    <span class="time-label">下次计划更新</span>
+                    <span id="next-update-time" class="time-value">{{.NextUpdateTime}}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>更新历史</h2>
+            <div id="history-container" class="history-container">
+                <!-- 历史记录将在这里动态添加 -->
+            </div>
+        </div>
+
+        <!-- 规则管理卡片 -->
+        <div class="card">
+            <div class="flex" style="margin-bottom: 20px;">
+                <h2>规则管理</h2>
+                <button id="add-rule-btn" onclick="showAddRuleModal()">添加新规则</button>
+            </div>
+            <div id="rules-container">
+                <p style="color: var(--text-secondary); margin-bottom: 16px;">管理您的Clash规则来源：</p>
+                
+                <!-- 规则列表 -->
+                <div id="rule-list-container">
+                    <div style="text-align: center; padding: 24px; color: var(--text-secondary); background-color: var(--background); border-radius: var(--radius-md);">加载规则中...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 设置卡片 -->
+        <div class="card">
+            <h2 style="margin-bottom: 24px;">系统设置</h2>
+            <div class="form-group">
+                <label class="form-label" for="clash-api-url">Clash API 地址</label>
+                <input type="text" id="clash-api-url" class="form-input" placeholder="例如：http://127.0.0.1:9090">
+                <p class="form-help">通常为 http://127.0.0.1:9090（Clash 原版）或 http://127.0.0.1:端口（Clash for Windows）</p>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="clash-api-secret">Clash API 密钥</label>
+                <input type="text" id="clash-api-secret" class="form-input" placeholder="如果 Clash 设置了 API 密钥，请填写">
+                <p class="form-help">对应 Clash 配置中的 secret 字段，如未设置可留空</p>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="update-interval">更新间隔（小时）</label>
+                <input type="number" id="update-interval" class="form-input" min="1" max="24">
+                <p class="form-help">设置自动更新规则的时间间隔，建议为6-24小时</p>
+            </div>
+            <div class="form-group flex">
+                <label class="form-label">随 Clash 启动（Clash启动时自动激活功能）</label>
+                <label class="switch">
+                    <input type="checkbox" id="auto-start-toggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="form-group flex">
+                <label class="form-label">随系统启动（Windows开机时自动运行）</label>
+                <label class="switch">
+                    <input type="checkbox" id="system-auto-start-toggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="flex" style="margin-top: 28px;">
+                <span></span>
+                <button id="save-settings-btn">保存设置</button>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 40px; margin-bottom: 30px; color: var(--text-secondary);">
+            <div style="margin-bottom: 14px; display: flex; align-items: center; justify-content: center; gap: 14px;">
+                <a href="https://github.com/shuakami/ClashRuleSync" target="_blank" style="display: inline-flex; align-items: center; text-decoration: none; color: var(--text-primary); font-weight: 500; transition: var(--transition); padding: 8px 12px; border-radius: var(--radius-md); background-color: var(--background); border: 1px solid var(--border);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+                    ClashRuleSync
+                </a>
+            </div>
+            
+            <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px;">
+                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--radius-md); background-color: var(--primary-light); color: var(--primary-dark); font-size: 12px; font-weight: 600;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path><line x1="16" y1="8" x2="2" y2="22"></line><line x1="17.5" y1="15" x2="9" y2="15"></line></svg>
+                    Version {{.Version}}
+                </span>
+                
+                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--radius-md); background-color: var(--background); color: var(--text-tertiary); font-size: 12px; font-weight: 600; border: 1px solid var(--border);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01"></path><path d="M7 20v-4"></path><path d="M12 20v-8"></path><path d="M17 20V8"></path><path d="M22 4v16"></path></svg>
+                    Build {{.BuildID}}
+                </span>
+            </div>
+
+            <div style="font-size: 13px; color: var(--text-tertiary); max-width: 600px; margin: 0 auto;">
+                <div style="margin-bottom: 8px;">
+                    Made with ❤️ by <a href="https://github.com/shuakami" target="_blank" style="color: inherit; text-decoration: underline; text-decoration-style: dotted;">shuakami</a>
+                </div>
+                <div>
+                    Streamline your browsing experience with intelligent rule-based traffic routing
+                    <br>
+                    © 2025 ClashRuleSync. Licensed under GPL-3.0
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑规则模态窗口 -->
+    <div id="rule-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="rule-modal-title" class="modal-title">添加新规则</h3>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label" for="rule-name">规则名称</label>
+                    <input type="text" id="rule-name" class="form-input" placeholder="例如：cn_domain">
+                    <p class="form-help">建议使用简短且有描述性的名称</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="rule-url">规则URL</label>
+                    <input type="text" id="rule-url" class="form-input" placeholder="例如：https://example.com/rules/direct.txt">
+                    <p class="form-help">指向规则文本的URL地址</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="rule-type">规则类型</label>
+                    <select id="rule-type" class="form-input">
+                        <option value="domain">域名规则 (domain)</option>
+                        <option value="ipcidr">IP网段规则 (ipcidr)</option>
+                        <option value="mixed">混合规则 (domain & ipcidr)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="rule-behavior">行为</label>
+                    <select id="rule-behavior" class="form-input">
+                        <option value="domain">域名匹配 (domain)</option>
+                        <option value="ipcidr">IP段匹配 (ipcidr)</option>
+                        <option value="mixed">混合匹配 (domain & ipcidr)</option>
+                    </select>
+                </div>
+                <div class="form-group flex">
+                    <label class="form-label">启用此规则</label>
+                    <label class="switch">
+                        <input type="checkbox" id="rule-enabled" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <input type="hidden" id="edit-rule-id" value="">
+            </div>
+            <div class="modal-footer">
+                <button class="secondary" onclick="closeRuleModal()">取消</button>
+                <button id="save-rule-btn" onclick="saveRule()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === 全局函数定义 ===
+        
+        // 添加手风琴功能
+        function toggleAccordion(id) {
+            const content = document.getElementById(id);
+            const header = content.previousElementSibling;
+            
+            if (content.style.display === "block") {
+                content.style.display = "none";
+                header.classList.remove("active");
+            } else {
+                // 先关闭所有其他手风琴
+                document.querySelectorAll('.accordion-content').forEach(item => {
+                    item.style.display = "none";
+                    item.previousElementSibling.classList.remove("active");
+                });
+                
+                // 打开当前手风琴
+                content.style.display = "block";
+                header.classList.add("active");
+            }
+        }
+        
+        // === 规则管理函数 - 全局定义 === //
+        
+        // 获取规则列表
+        function fetchRules() {
+            fetch('/api/rules')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ok') {
+                        displayRules(data.rule_providers || []);
+                    } else {
+                        document.getElementById('rule-list-container').innerHTML = 
+                            '<div class="error-message">获取规则失败: ' + (data.message || '未知错误') + '</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('获取规则失败:', error);
+                    document.getElementById('rule-list-container').innerHTML = 
+                        '<div class="error-message">获取规则失败，请检查网络连接或服务器状态。</div>';
+                });
+        }
+
+        // 显示规则列表
+        function displayRules(rules) {
+            const container = document.getElementById('rule-list-container');
+            
+            if (!rules || rules.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 40px 20px; color: var(--text-secondary); background-color: var(--background); border-radius: var(--radius-md);">暂无规则，请点击"添加新规则"按钮创建规则</div>';
+                return;
+            }
+            
+            // 创建表格
+            let html = `
+                <table class="rule-table">
+                    <thead>
+                        <tr>
+                            <th>规则名称</th>
+                            <th>类型</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            rules.forEach((rule, index) => {
+                html += `
+                    <tr>
+                        <td><div class="rule-name">${rule.name}</div></td>
+                        <td><span class="rule-type">${rule.type}</span></td>
+                        <td>
+                            <span class="status ${rule.enabled ? 'status-connected' : 'status-disconnected'}">
+                                ${rule.enabled ? '已启用' : '已禁用'}
+                            </span>
+                        </td>
+                        <td class="rule-actions">
+                            <button class="secondary" onclick="editRule(${index})">编辑</button>
+                            <button class="danger" onclick="deleteRule('${rule.name}')">删除</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        // 显示添加规则模态窗口
+        function showAddRuleModal() {
+            // 清空表单
+            document.getElementById('rule-name').value = '';
+            document.getElementById('rule-url').value = '';
+            document.getElementById('rule-type').value = 'domain';
+            document.getElementById('rule-behavior').value = 'domain';
+            document.getElementById('rule-enabled').checked = true;
+            document.getElementById('edit-rule-id').value = '';
+            
+            // 设置标题
+            document.getElementById('rule-modal-title').textContent = '添加新规则';
+            
+            // 显示模态窗口
+            document.getElementById('rule-modal').style.display = 'block';
+        }
+
+        // 编辑规则
+        function editRule(index) {
+            // 获取规则数据
+            fetch('/api/rules')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ok' && data.rule_providers && data.rule_providers[index]) {
+                        const rule = data.rule_providers[index];
+                        
+                        // 填充表单
+                        document.getElementById('rule-name').value = rule.name;
+                        document.getElementById('rule-url').value = rule.url;
+                        document.getElementById('rule-type').value = rule.type;
+                        document.getElementById('rule-behavior').value = rule.behavior;
+                        document.getElementById('rule-enabled').checked = rule.enabled;
+                        document.getElementById('edit-rule-id').value = index;
+                        
+                        // 设置标题
+                        document.getElementById('rule-modal-title').textContent = '编辑规则';
+                        
+                        // 显示模态窗口
+                        document.getElementById('rule-modal').style.display = 'block';
+                    } else {
+                        alert('获取规则数据失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('获取规则数据失败:', error);
+                    alert('获取规则数据失败，请检查网络连接或服务器状态。');
+                });
+        }
+
+        // 关闭规则模态窗口
+        function closeRuleModal() {
+            document.getElementById('rule-modal').style.display = 'none';
+        }
+
+        // 保存规则
+        function saveRule() {
+            const ruleData = {
+                name: document.getElementById('rule-name').value,
+                url: document.getElementById('rule-url').value,
+                type: document.getElementById('rule-type').value,
+                behavior: document.getElementById('rule-behavior').value,
+                enabled: document.getElementById('rule-enabled').checked,
+                path: 'rules/' + document.getElementById('rule-name').value + '.yaml'
+            };
+            
+            const editIndex = document.getElementById('edit-rule-id').value;
+            const isEdit = editIndex !== '';
+            
+            // 验证数据
+            if (!ruleData.name || !ruleData.url) {
+                alert('规则名称和URL不能为空');
+                return;
+            }
+            
+            const endpoint = isEdit ? '/api/rules/edit' : '/api/rules/add';
+            const requestData = isEdit 
+                ? { index: parseInt(editIndex), rule: ruleData } 
+                : { rule: ruleData };
+            
+            fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    closeRuleModal();
+                    fetchRules();
+                    alert(isEdit ? '规则更新成功！' : '规则添加成功！');
+                } else {
+                    alert((isEdit ? '更新' : '添加') + '规则失败: ' + (data.message || '未知错误'));
+                }
+            })
+            .catch(error => {
+                console.error((isEdit ? '更新' : '添加') + '规则失败:', error);
+                alert((isEdit ? '更新' : '添加') + '规则失败，请检查网络连接或服务器状态。');
+            });
+        }
+
+        // 删除规则
+        function deleteRule(ruleName) {
+            if (!confirm(`确定要删除规则 "${ruleName}" 吗？此操作不可恢复！`)) {
+                return;
+            }
+            
+            fetch('/api/rules/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: ruleName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    fetchRules();
+                    alert('规则删除成功！');
+                } else {
+                    alert('删除规则失败: ' + (data.message || '未知错误'));
+                }
+            })
+            .catch(error => {
+                console.error('删除规则失败:', error);
+                alert('删除规则失败，请检查网络连接或服务器状态。');
+            });
+        }
+
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取状态相关元素
+            const clashStatusEl = document.getElementById('clash-status');
+            const statusMessageEl = document.getElementById('status-message');
+            const updateBtn = document.getElementById('update-btn');
+            const lastUpdateTimeEl = document.getElementById('last-update-time');
+            const nextUpdateTimeEl = document.getElementById('next-update-time');
+            const historyContainerEl = document.getElementById('history-container');
+            
+            // 获取设置相关元素
+            const clashApiUrlEl = document.getElementById('clash-api-url');
+            const clashApiSecretEl = document.getElementById('clash-api-secret');
+            const updateIntervalEl = document.getElementById('update-interval');
+            const autoStartToggleEl = document.getElementById('auto-start-toggle');
+            const systemAutoStartToggleEl = document.getElementById('system-auto-start-toggle');
+            const saveSettingsBtn = document.getElementById('save-settings-btn');
+
+            // 获取状态信息
+            function fetchStatus() {
+                fetch('/api/status')
+                    .then(response => response.json())
+                    .then(data => {
+                        // 根据状态更新UI
+                        const apiTutorialCard = document.getElementById('api-tutorial-card');
+                        
+                        if (data.status === "connected") {
+                            // API正常连接
+                            clashStatusEl.className = 'status status-connected';
+                            clashStatusEl.textContent = '已连接';
+                            statusMessageEl.textContent = data.status_message || 'Clash 正在运行，规则同步服务已激活。';
+                            updateBtn.disabled = false;
+                            apiTutorialCard.style.display = 'none';
+                        } else if (data.status === "process_only") {
+                            // 检测到进程但API连接失败
+                            clashStatusEl.className = 'status status-process-only';
+                            clashStatusEl.textContent = 'API未连接';
+                            statusMessageEl.textContent = data.status_message || 'Clash 进程已检测到，但无法连接到API。';
+                            updateBtn.disabled = true;
+                            apiTutorialCard.style.display = 'block';
+                        } else {
+                            // 未检测到Clash
+                            clashStatusEl.className = 'status status-disconnected';
+                            clashStatusEl.textContent = '未连接';
+                            statusMessageEl.textContent = data.status_message || 'Clash 未运行或无法连接，请启动 Clash。';
+                            updateBtn.disabled = true;
+                            apiTutorialCard.style.display = 'none';
+                        }
+
+                        // 更新时间信息
+                        if (data.last_update_time) {
+                            const lastUpdateTime = new Date(data.last_update_time);
+                            lastUpdateTimeEl.textContent = formatDateTime(lastUpdateTime);
+                        } else {
+                            lastUpdateTimeEl.textContent = '尚未更新';
+                        }
+
+                        if (data.next_update_time) {
+                            const nextUpdateTime = new Date(data.next_update_time);
+                            nextUpdateTimeEl.textContent = formatDateTime(nextUpdateTime);
+                        }
+
+                        // 更新历史记录
+                        updateHistory(data.update_history);
+
+                        // 更新自动启动开关
+                        autoStartToggleEl.checked = data.auto_start_enabled;
+                        systemAutoStartToggleEl.checked = data.system_auto_start_enabled;
+                    })
+                    .catch(error => {
+                        console.error('获取状态失败:', error);
+                        clashStatusEl.className = 'status status-disconnected';
+                        clashStatusEl.textContent = '错误';
+                        statusMessageEl.textContent = '获取状态失败，请刷新页面重试。';
+                    });
+            }
+
+            // 获取配置信息
+            function fetchConfig() {
+                fetch('/api/config')
+                    .then(response => response.json())
+                    .then(config => {
+                        // 填充配置表单
+                        clashApiUrlEl.value = config.clash_api_url || '';
+                        clashApiSecretEl.value = config.clash_api_secret || '';
+                        updateIntervalEl.value = config.update_interval / (60 * 60 * 1000000000) || 12; // 纳秒转小时
+                        autoStartToggleEl.checked = config.auto_start_enabled;
+                        systemAutoStartToggleEl.checked = config.system_auto_start_enabled;
+                    })
+                    .catch(error => {
+                        console.error('获取配置失败:', error);
+                    });
+            }
+
+            // 更新历史记录
+            function updateHistory(history) {
+                const historyContainerEl = document.getElementById('history-container');
+                
+                if (!history || history.length === 0) {
+                    historyContainerEl.innerHTML = '<div style="text-align: center; padding: 40px 20px; color: var(--text-secondary); background-color: var(--background); border-radius: var(--radius-md);">暂无更新历史记录</div>';
+                    return;
+                }
+
+                // 清空容器
+                historyContainerEl.innerHTML = '';
+
+                // 最多显示5条历史记录
+                const recordsToShow = history.slice(0, 5);
+
+                // 添加历史记录
+                recordsToShow.forEach(record => {
+                    const recordTime = formatDateTime(new Date(record.time));
+                    
+                    const historyEntry = document.createElement('div');
+                    historyEntry.className = 'history-entry';
+                    
+                    const historyTime = document.createElement('div');
+                    historyTime.className = 'history-time';
+                    historyTime.textContent = recordTime;
+                    
+                    const historyDetails = document.createElement('div');
+                    historyDetails.className = 'history-details';
+                    
+                    // 分类成功与失败的规则
+                    const successRules = [];
+                    const failedRules = [];
+                    
+                    record.providers.forEach(provider => {
+                        if (provider.success) {
+                            successRules.push(provider);
+                        } else {
+                            failedRules.push(provider);
+                        }
+                    });
+                    
+                    // 先显示成功规则
+                    if (successRules.length > 0) {
+                        successRules.forEach(provider => {
+                            const providerEl = document.createElement('div');
+                            providerEl.className = 'success-item';
+                            providerEl.textContent = `${provider.name}: 更新成功`;
+                            historyDetails.appendChild(providerEl);
+                        });
+                    }
+                    
+                    // 再显示失败规则
+                    if (failedRules.length > 0) {
+                        failedRules.forEach(provider => {
+                            const providerEl = document.createElement('div');
+                            providerEl.className = 'failed-item';
+                            providerEl.textContent = `${provider.name}: 更新失败 ${provider.message ? '- ' + provider.message : ''}`;
+                            historyDetails.appendChild(providerEl);
+                        });
+                    }
+                    
+                    historyEntry.appendChild(historyTime);
+                    historyEntry.appendChild(historyDetails);
+                    historyContainerEl.appendChild(historyEntry);
+                });
+            }
+
+            // 添加统一的日期时间格式化函数
+            function formatDateTime(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                const seconds = String(date.getSeconds()).padStart(2, '0');
+                
+                return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+            }
+
+            // 修改更新规则函数，检测服务器阻塞和修复按钮状态
+            function updateRules() {
+                // 禁用按钮并更改文本
+                updateBtn.disabled = true;
+                updateBtn.textContent = '更新中，稍安勿躁...';
+                
+                // 记录开始更新的时间
+                const updateStartTime = new Date();
+                
+                // 更新状态显示为"更新中"
+                const clashStatusEl = document.getElementById('clash-status');
+                const statusMessageEl = document.getElementById('status-message');
+                const originalStatusClass = clashStatusEl.className;
+                const originalStatusText = clashStatusEl.textContent;
+                const originalMessageText = statusMessageEl.textContent;
+                
+                // 设置为更新中状态
+                clashStatusEl.className = 'status status-updating';
+                clashStatusEl.textContent = '规则更新中';
+                statusMessageEl.textContent = '正在更新规则提供者，请稍候...';
+                
+                // 创建一个进度指示器
+                const progressContainer = document.createElement('div');
+                progressContainer.id = 'update-progress-container';
+                progressContainer.style.marginTop = '20px';
+                progressContainer.style.padding = '15px';
+                progressContainer.style.backgroundColor = 'var(--warning-light)';
+                progressContainer.style.borderRadius = 'var(--radius-md)';
+                progressContainer.style.animation = 'fadeIn 0.3s ease';
+                
+                const progressText = document.createElement('p');
+                progressText.style.margin = '0';
+                progressText.style.color = 'var(--warning)';
+                progressText.style.fontWeight = '500';
+                progressText.innerHTML = '规则更新进行中，服务器可能暂时无响应，请耐心等待...<br>更新期间网页可能无法访问，完成后将自动恢复。';
+                
+                const progressBar = document.createElement('div');
+                progressBar.style.marginTop = '10px';
+                progressBar.style.height = '4px';
+                progressBar.style.backgroundColor = 'rgba(245, 158, 11, 0.3)';
+                progressBar.style.borderRadius = '2px';
+                progressBar.style.overflow = 'hidden';
+                
+                const progressIndicator = document.createElement('div');
+                progressIndicator.style.height = '100%';
+                progressIndicator.style.width = '30%';
+                progressIndicator.style.backgroundColor = 'var(--warning)';
+                progressIndicator.style.borderRadius = '2px';
+                progressIndicator.style.animation = 'progress-bar 1.5s ease-in-out infinite';
+                
+                // 添加进度条动画
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes progress-bar {
+                        0% { transform: translateX(-100%); }
+                        100% { transform: translateX(300%); }
+                    }
+                `;
+                document.head.appendChild(style);
+                
+                progressBar.appendChild(progressIndicator);
+                progressContainer.appendChild(progressText);
+                progressContainer.appendChild(progressBar);
+                
+                // 添加到规则更新卡片
+                const updateCard = document.querySelector('.card:nth-child(3)');
+                updateCard.appendChild(progressContainer);
+                
+                // 使用异步方式发送请求
+                fetch('/api/update', {
+                    method: 'POST',
+                    // 增加较长的超时时间
+                    signal: AbortSignal.timeout(60000) // 60秒超时
+                })
+                .then(response => {
+                    if (response.ok) {
+                        if (response.headers.get('Content-Type') && 
+                            response.headers.get('Content-Type').includes('application/json')) {
+                            return response.json();
+                        } else {
+                            // 非JSON响应，假设是长时间运行的任务
+                            startServerStatusPolling(updateStartTime);
+                            return { status: 'pending', message: '更新任务已提交，正在处理中...' };
+                        }
+                    } else {
+                        throw new Error('请求失败: ' + response.status);
+                    }
+                })
+                .then(data => {
+                    if (data.status === 'ok') {
+                        handleUpdateSuccess(progressContainer);
+                    } else if (data.status === 'pending') {
+                        // 已经开始轮询，不需要额外操作
+                        console.log('更新任务正在进行中...');
+                    } else {
+                        handleUpdateError(progressContainer, data.message || '未知错误', 
+                                         originalStatusClass, originalStatusText, originalMessageText);
+                    }
+                })
+                .catch(error => {
+                    console.error('更新规则失败:', error);
+                    
+                    if (error.name === 'AbortError' || error.name === 'TypeError') {
+                        // 请求超时或网络错误，可能是因为服务器正在执行更新操作
+                        console.log("请求超时或服务器无响应，可能正在进行规则更新...");
+                        
+                        // 添加状态检测轮询
+                        startServerStatusPolling(updateStartTime);
+                    } else {
+                        // 其他错误
+                        handleUpdateError(progressContainer, error.message, 
+                                         originalStatusClass, originalStatusText, originalMessageText);
+                    }
+                });
+            }
+
+            // 成功处理函数
+            function handleUpdateSuccess(progressContainer) {
+                // 移除进度指示器
+                if (progressContainer && progressContainer.parentNode) {
+                    progressContainer.parentNode.removeChild(progressContainer);
+                }
+                
+                // 显示成功消息
+                alert('规则更新成功！');
+                
+                // 重新获取状态
+                fetchStatus();
+                
+                // 恢复按钮状态 - 修复按钮文本不恢复的bug
+                const updateBtn = document.getElementById('update-btn');
+                updateBtn.disabled = false;
+                updateBtn.textContent = '立即更新规则';
+            }
+
+            // 错误处理函数
+            function handleUpdateError(progressContainer, errorMessage, originalStatusClass, originalStatusText, originalMessageText) {
+                // 移除进度指示器
+                if (progressContainer && progressContainer.parentNode) {
+                    progressContainer.parentNode.removeChild(progressContainer);
+                }
+                
+                alert('规则更新失败: ' + errorMessage);
+                
+                // 恢复原始状态
+                const clashStatusEl = document.getElementById('clash-status');
+                const statusMessageEl = document.getElementById('status-message');
+                
+                clashStatusEl.className = originalStatusClass;
+                clashStatusEl.textContent = originalStatusText;
+                statusMessageEl.textContent = originalMessageText;
+                
+                // 恢复按钮状态
+                const updateBtn = document.getElementById('update-btn');
+                updateBtn.disabled = false;
+                updateBtn.textContent = '立即更新规则';
+            }
+
+            // 服务器状态轮询函数 - 专门处理服务器阻塞的情况
+            function startServerStatusPolling(updateStartTime) {
+                console.log("开始轮询服务器状态...");
+                
+                let pollCount = 0;
+                const maxPolls = 120; // 最多轮询120次，最长可等待20分钟
+                const pollInterval = 10000; // 每10秒轮询一次
+                
+                const pollTimer = setInterval(() => {
+                    pollCount++;
+                    console.log(`第 ${pollCount} 次轮询服务器状态...`);
+                    
+                    // 尝试获取服务器状态
+                    fetch('/api/status', {
+                        // 使用较短的超时以快速检测服务器是否恢复
+                        signal: AbortSignal.timeout(5000)
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            // 服务器已恢复响应
+                            console.log("服务器已恢复响应");
+                            return response.json();
+                        } else {
+                            throw new Error('状态请求失败: ' + response.status);
+                        }
+                    })
+                    .then(data => {
+                        clearInterval(pollTimer);
+                        
+                        // 移除进度指示器
+                        const progressContainer = document.getElementById('update-progress-container');
+                        if (progressContainer && progressContainer.parentNode) {
+                            progressContainer.parentNode.removeChild(progressContainer);
+                        }
+                        
+                        // 检查是否有新的更新历史记录
+                        if (data.update_history && data.update_history.length > 0) {
+                            const latestUpdate = new Date(data.update_history[0].time);
+                            
+                            // 如果最新的更新时间比我们开始更新的时间晚，说明更新成功了
+                            if (latestUpdate > updateStartTime) {
+                                // 显示成功消息
+                                alert('规则更新成功！');
+                            } else {
+                                // 没有新的更新记录
+                                alert('更新状态未知，请检查更新历史。');
+                            }
+                        } else {
+                            alert('未检测到更新记录，请手动检查更新状态。');
+                        }
+                        
+                        // 更新UI
+                        fetchStatus();
+                        
+                        // 恢复按钮状态 - 确保按钮文本恢复
+                        const updateBtn = document.getElementById('update-btn');
+                        updateBtn.disabled = false;
+                        updateBtn.textContent = '立即更新规则';
+                    })
+                    .catch(error => {
+                        console.error(`轮询状态失败 (${pollCount}/${maxPolls}):`, error);
+                        
+                        // 如果达到最大轮询次数，停止轮询
+                        if (pollCount >= maxPolls) {
+                            clearInterval(pollTimer);
+                            
+                            // 移除进度指示器
+                            const progressContainer = document.getElementById('update-progress-container');
+                            if (progressContainer && progressContainer.parentNode) {
+                                progressContainer.parentNode.removeChild(progressContainer);
+                            }
+                            
+                            // 提示用户
+                            alert('服务器可能仍在处理更新，请稍后手动刷新页面检查状态。');
+                            
+                            // 重置按钮状态
+                            const updateBtn = document.getElementById('update-btn');
+                            updateBtn.disabled = false;
+                            updateBtn.textContent = '立即更新规则';
+                        }
+                        // 出错时不停止轮询，继续尝试（除非达到最大次数）
+                    });
+                }, pollInterval);
+            }
+
+            // 保存设置
+            function saveSettings() {
+                const updateIntervalHours = parseInt(updateIntervalEl.value) || 12;
+                const updateIntervalNs = updateIntervalHours * 60 * 60 * 1000000000; // 小时转纳秒
+                
+                const config = {
+                    clash_api_url: clashApiUrlEl.value,
+                    clash_api_secret: clashApiSecretEl.value,
+                    update_interval: updateIntervalNs,
+                    auto_start_enabled: autoStartToggleEl.checked,
+                    system_auto_start_enabled: systemAutoStartToggleEl.checked
+                };
+                
+                fetch('/api/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ok') {
+                        alert('设置保存成功！');
+                        // 重新获取状态
+                        fetchStatus();
+                    } else {
+                        alert('设置保存失败: ' + (data.message || '未知错误'));
+                    }
+                })
+                .catch(error => {
+                    console.error('保存设置失败:', error);
+                    alert('保存设置失败，请检查网络连接或服务器状态。');
+                });
+            }
+
+            // 绑定事件处理程序
+            updateBtn.addEventListener('click', updateRules);
+            saveSettingsBtn.addEventListener('click', saveSettings);
+
+            // 初始获取数据
+            fetchStatus();
+            fetchConfig();
+            fetchRules(); // 获取规则列表
+
+            // 每10秒更新一次状态
+            setInterval(fetchStatus, 10000);
+        });
+
+        // 页面加载时立即调用获取规则列表
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchRules(); // 确保规则列表在页面加载时就被获取
+        });
+    </script>
+</body>
+</html> 

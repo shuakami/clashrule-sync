@@ -1,0 +1,93 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*' # 当推送的标签以 v 开头时触发，例如 v1.0.0
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # 定义三个目标平台
+        goos: [windows, darwin, linux]
+        goarch: [amd64]
+        include:
+          - goos: windows
+            extension: .exe
+            asset_name: ClashRuleSync-windows-amd64.zip
+            compress_cmd: zip -j
+          - goos: darwin
+            extension: ''
+            asset_name: ClashRuleSync-macos-amd64.tar.gz
+            compress_cmd: tar czf
+          - goos: linux
+            extension: ''
+            asset_name: ClashRuleSync-linux-amd64.tar.gz
+            compress_cmd: tar czf
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Get dependencies
+        run: go mod download
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          go build -v -o "ClashRuleSync${{ matrix.extension }}" .
+          
+      - name: Prepare Package
+        run: |
+          mkdir -p release
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            ${{ matrix.compress_cmd }} release/${{ matrix.asset_name }} "ClashRuleSync${{ matrix.extension }}" LICENSE README.md
+          else
+            ${{ matrix.compress_cmd }} release/${{ matrix.asset_name }} "ClashRuleSync${{ matrix.extension }}" LICENSE README.md
+          fi
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.asset_name }}
+          path: release/${{ matrix.asset_name }}
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref }}
+          name: Release ${{ steps.get_version.outputs.VERSION }}
+          draft: false
+          prerelease: false
+          files: artifacts/*/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 

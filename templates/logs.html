@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClashRuleSync - 系统日志</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* 主色调 */
+            --primary: #3b82f6;
+            --primary-light: #dbeafe;
+            --primary-dark: #1d4ed8;
+            --primary-gradient: linear-gradient(135deg, #3b82f6, #6366f1);
+            
+            /* 文本颜色 */
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --text-tertiary: #6b7280;
+            
+            /* 背景和卡片 */
+            --background: #f8fafc;
+            --card: #ffffff;
+            --card-hover: #f9fafb;
+            
+            /* 边框和阴影 */
+            --border: #e2e8f0;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 6px rgba(0,0,0,0.02);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.04), 0 1px 8px rgba(0,0,0,0.02);
+            --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.05), 0 10px 10px -5px rgba(0,0,0,0.01);
+            
+            /* 状态颜色 */
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --error: #ef4444;
+            --error-light: #fee2e2;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --info: #3b82f6;
+            --info-light: #dbeafe;
+            
+            /* 圆角 */
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            
+            /* 动画 */
+            --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: var(--background);
+            padding: 40px 20px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 880px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 36px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav {
+            display: flex;
+            gap: 16px;
+        }
+
+        .nav-item {
+            padding: 6px 12px;
+            border-radius: var(--radius-md);
+            transition: var(--transition);
+        }
+
+        .nav-item:hover {
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+        }
+
+        .nav-item.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .card {
+            background-color: var(--card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .log-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            background-color: var(--card);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            background-color: var(--card-hover);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-danger {
+            background-color: var(--error);
+            color: white;
+            border-color: var(--error);
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+
+        .log-level-filter {
+            display: none;
+        }
+
+        .level-tag {
+            display: none;
+        }
+
+        .log-container {
+            background-color: var(--card);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            height: 600px;
+            overflow-y: auto;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            background: #1e1e1e;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 10px;
+            border-radius: var(--radius-md);
+            transition: var(--transition);
+            border: 1px solid transparent;
+            color: #e1e1e1;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .log-entry:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .log-time {
+            color: #6b7280;
+            white-space: nowrap;
+        }
+
+        .log-level {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 12px;
+            min-width: 60px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .log-debug {
+            background: rgba(75, 85, 99, 0.2);
+            color: #9ca3af;
+        }
+
+        .log-info {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+        }
+
+        .log-warn {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+        }
+
+        .log-error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+        .log-message {
+            flex: 1;
+            word-break: break-word;
+            color: #e1e1e1;
+        }
+
+        .log-path {
+            color: #6b7280;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            margin-bottom: 30px;
+            color: var(--text-secondary);
+        }
+
+        .footer-links {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .github-link {
+            display: inline-flex;
+            align-items: center;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-weight: 500;
+            transition: var(--transition);
+            padding: 8px 12px;
+            border-radius: var(--radius-md);
+            background-color: var(--card);
+            border: 1px solid var(--border);
+        }
+
+        .github-link:hover {
+            background-color: var(--card-hover);
+        }
+
+        .footer-badges {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: var(--radius-md);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-primary {
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+        }
+
+        .badge-secondary {
+            background-color: var(--card);
+            color: var(--text-tertiary);
+            border: 1px solid var(--border);
+        }
+
+        .footer-text {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-top: 16px;
+        }
+
+        .footer-divider {
+            width: 40px;
+            height: 1px;
+            background-color: var(--border);
+            margin: 16px auto;
+        }
+
+        .select-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .select {
+            appearance: none;
+            padding: 8px 32px 8px 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            background-color: var(--card);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            min-width: 120px;
+        }
+
+        .select:hover {
+            border-color: var(--primary);
+        }
+
+        .select-arrow {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .nav {
+                width: 100%;
+                overflow-x: auto;
+                padding-bottom: 8px;
+            }
+
+            .log-controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                ClashRuleSync
+            </h1>
+            
+            <div class="nav">
+                <a href="/" class="nav-item">
+                    <span>概览</span>
+                </a>
+                <a href="/rules" class="nav-item">
+                    <span>规则管理</span>
+                </a>
+                <a href="/settings" class="nav-item">
+                    <span>设置</span>
+                </a>
+                <a href="/logs" class="nav-item active">
+                    <span>日志</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
+                        <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path>
+                        <line x1="9" y1="9" x2="10" y2="9"></line>
+                        <line x1="9" y1="13" x2="15" y2="13"></line>
+                        <line x1="9" y1="17" x2="15" y2="17"></line>
+                    </svg>
+                    系统日志
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="log-controls">
+                    <div>
+                        <div class="select-container">
+                            <select id="logLevelSelect" class="select">
+                                <option value="debug">调试</option>
+                                <option value="info" selected>信息</option>
+                                <option value="warn">警告</option>
+                                <option value="error">错误</option>
+                            </select>
+                            <svg class="select-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div style="flex-grow: 1;"></div>
+
+                    <button id="refreshBtn" class="btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                        </svg>
+                        刷新
+                    </button>
+
+                    <button id="downloadBtn" class="btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        下载日志
+                    </button>
+
+                    <button id="clearLogsBtn" class="btn btn-danger">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        清空日志
+                    </button>
+                </div>
+                
+                <div class="log-level-filter">
+                    <div class="level-tag level-debug active" data-level="debug">调试</div>
+                    <div class="level-tag level-info active" data-level="info">信息</div>
+                    <div class="level-tag level-warn active" data-level="warn">警告</div>
+                    <div class="level-tag level-error active" data-level="error">错误</div>
+                </div>
+                
+                <div id="logContainer" class="log-container">
+                    <div class="log-entry">
+                        <span class="log-time">[2023-05-01 12:34:56]</span>
+                        <span class="log-info">[INFO]</span> 
+                        日志系统已初始化，正在加载历史日志...
+                    </div>
+                    <div class="log-entry">
+                        <span class="log-time">[2023-05-01 12:34:57]</span>
+                        <span class="log-debug">[DEBUG]</span> 
+                        检查配置文件: /Users/username/.config/clashrule-sync/config.json
+                    </div>
+                    <div class="log-entry">
+                        <span class="log-time">[2023-05-01 12:34:57]</span>
+                        <span class="log-info">[INFO]</span> 
+                        成功连接到Clash API: http://127.0.0.1:9090
+                    </div>
+                    <div class="log-entry">
+                        <span class="log-time">[2023-05-01 12:34:58]</span>
+                        <span class="log-warn">[WARN]</span> 
+                        规则更新时间超过预定间隔，正在执行强制更新
+                    </div>
+                    <div class="log-entry">
+                        <span class="log-time">[2023-05-01 12:35:01]</span>
+                        <span class="log-error">[ERROR]</span> 
+                        无法下载规则: https://example.com/rules.txt, 错误: 连接超时
+                    </div>
+                    <div class="log-entry">
+                        <span class="log-time">[2023-05-01 12:35:02]</span>
+                        <span class="log-info">[INFO]</span> 
+                        尝试使用备用源下载规则
+                    </div>
+                    <div class="log-entry">
+                        <span class="log-time">[2023-05-01 12:35:03]</span>
+                        <span class="log-info">[INFO]</span> 
+                        成功从备用源下载规则，共获取规则 5273 条
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    日志系统信息
+                </div>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 8px; color: var(--text-secondary);">日志文件位置</div>
+                        <div style="padding: 8px 12px; background-color: var(--card); border-radius: var(--radius-md); font-family: monospace; word-break: break-all;">
+                            <span id="logFilePath">~/.config/clashrule-sync/logs/app.log</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 8px; color: var(--text-secondary);">日志存储</div>
+                        <div style="display: flex; gap: 16px;">
+                            <div>
+                                <div style="font-size: 24px; font-weight: 600; color: var(--primary);">7</div>
+                                <div style="font-size: 12px; color: var(--text-tertiary);">保留天数</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 24px; font-weight: 600; color: var(--primary);">3</div>
+                                <div style="font-size: 12px; color: var(--text-tertiary);">当前日志文件 (MB)</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 24px; font-weight: 600; color: var(--primary);">50</div>
+                                <div style="font-size: 12px; color: var(--text-tertiary);">最大单文件大小 (MB)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; margin-bottom: 30px; color: var(--text-secondary);">
+            <div style="margin-bottom: 14px; display: flex; align-items: center; justify-content: center; gap: 14px;">
+                <a href="https://github.com/shuakami/ClashRuleSync" target="_blank" style="display: inline-flex; align-items: center; text-decoration: none; color: var(--text-primary); font-weight: 500; transition: var(--transition); padding: 8px 12px; border-radius: var(--radius-md); background-color: var(--card); border: 1px solid var(--border);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+                    ClashRuleSync
+                </a>
+            </div>
+            
+            <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px;">
+                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--radius-md); background-color: var(--primary-light); color: var(--primary-dark); font-size: 12px; font-weight: 600;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path><line x1="16" y1="8" x2="2" y2="22"></line><line x1="17.5" y1="15" x2="9" y2="15"></line></svg>
+                    Version {{.Version}}
+                </span>
+                
+                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--radius-md); background-color: var(--card); color: var(--text-tertiary); font-size: 12px; font-weight: 600; border: 1px solid var(--border);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01"></path><path d="M7 20v-4"></path><path d="M12 20v-8"></path><path d="M17 20V8"></path><path d="M22 4v16"></path></svg>
+                    Build {{.BuildID}}
+                </span>
+            </div>
+
+            <div style="font-size: 13px; color: var(--text-tertiary); max-width: 600px; margin: 0 auto;">
+                <div style="margin-bottom: 8px;">
+                    Made with ❤️ by <a href="https://github.com/shuakami" target="_blank" style="color: inherit; text-decoration: underline; text-decoration-style: dotted;">shuakami</a>
+                </div>
+                <div>
+                    Streamline your browsing experience with intelligent rule-based traffic routing
+                    <br>
+                    © 2025 ClashRuleSync. Licensed under GPL-3.0
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化日志级别过滤器
+            const logContainer = document.getElementById('logContainer');
+            const levelSelect = document.getElementById('logLevelSelect');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const clearLogsBtn = document.getElementById('clearLogsBtn');
+            
+            // 过滤日志条目
+            function filterLogs() {
+                const logEntries = logContainer.querySelectorAll('.log-entry');
+                let visibleCount = 0;
+                
+                logEntries.forEach(entry => {
+                    entry.style.display = '';
+                    visibleCount++;
+                });
+
+                // 移除旧的无日志消息
+                const oldMessage = logContainer.querySelector('.no-logs-message');
+                if (oldMessage) {
+                    oldMessage.remove();
+                }
+
+                // 仅当没有日志条目时才显示消息
+                if (logEntries.length === 0) {
+                    const message = document.createElement('div');
+                    message.className = 'log-entry no-logs-message';
+                    message.style.textAlign = 'center';
+                    message.style.color = 'var(--text-tertiary)';
+                    message.style.padding = '20px';
+                    message.textContent = '没有找到符合条件的日志记录';
+                    logContainer.appendChild(message);
+                }
+            }
+            
+            // 刷新按钮点击事件
+            refreshBtn.addEventListener('click', function() {
+                this.classList.add('loading');
+                fetchLogs(levelSelect.value).finally(() => {
+                    this.classList.remove('loading');
+                });
+            });
+            
+            // 级别选择变更事件
+            levelSelect.addEventListener('change', function() {
+                fetchLogs(this.value);
+            });
+            
+            // 下载按钮点击事件
+            downloadBtn.addEventListener('click', function() {
+                window.location.href = '/api/logs/download';
+            });
+            
+            // 清空日志按钮点击事件
+            clearLogsBtn.addEventListener('click', function() {
+                if (confirm('确定要清空所有日志吗？此操作不可撤销。')) {
+                    fetch('/api/logs/clear', {
+                        method: 'POST',
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'ok') {
+                            logContainer.innerHTML = '';
+                            const message = document.createElement('div');
+                            message.className = 'log-entry';
+                            message.innerHTML = `
+                                <span class="log-time">[${new Date().toLocaleString()}]</span>
+                                <span class="log-info">[INFO]</span>
+                                日志已清空
+                            `;
+                            logContainer.appendChild(message);
+                        } else {
+                            throw new Error(data.error || data.message);
+                        }
+                    })
+                    .catch(error => {
+                        const message = document.createElement('div');
+                        message.className = 'log-entry';
+                        message.innerHTML = `
+                            <span class="log-time">[${new Date().toLocaleString()}]</span>
+                            <span class="log-error">[ERROR]</span>
+                            清空日志失败: ${error.message}
+                        `;
+                        logContainer.appendChild(message);
+                    });
+                }
+            });
+            
+            // 获取日志数据
+            async function fetchLogs(minLevel) {
+                try {
+                    const response = await fetch('/api/logs?level=' + minLevel);
+                    const data = await response.json();
+                    
+                    logContainer.innerHTML = '';
+                    if (data.content && data.content.trim()) {
+                        const lines = data.content.trim().split('\n');
+                        lines.forEach(line => {
+                            if (!line.trim()) return;
+                            
+                            const entry = document.createElement('div');
+                            entry.className = 'log-entry';
+                            
+                            // 解析ANSI颜色代码和日志格式
+                            const cleanLine = line.replace(/\u001b\[\d+m/g, '');
+                            const match = cleanLine.match(/\[(.*?)\]\s*\[(.*?)\]\s*([^:]+):(\d+)\s*(.*)/);
+                            
+                            if (match) {
+                                const [, time, level, filePath, lineNum, message] = match;
+                                const shortPath = filePath.split('/').pop();
+                                
+                                entry.innerHTML = `
+                                    <span class="log-time">${time}</span>
+                                    <span class="log-level log-${level.toLowerCase()}">${level}</span>
+                                    <div class="log-content">
+                                        <div class="log-message">${message}</div>
+                                        <div class="log-path">${shortPath}:${lineNum}</div>
+                                    </div>
+                                `;
+                            } else {
+                                entry.textContent = cleanLine;
+                            }
+                            
+                            logContainer.appendChild(entry);
+                        });
+                    }
+                    
+                    if (data.logInfo) {
+                        document.getElementById('logFilePath').textContent = data.logInfo.path;
+                    }
+                    
+                    filterLogs();
+                    logContainer.scrollTop = logContainer.scrollHeight;
+                    
+                } catch (error) {
+                    console.error('获取日志失败:', error);
+                    logContainer.innerHTML = `
+                        <div class="log-entry">
+                            <span class="log-time">${new Date().toLocaleString()}</span>
+                            <span class="log-level log-error">ERROR</span>
+                            <div class="log-message">获取日志失败: ${error.message}</div>
+                        </div>
+                    `;
+                }
+            }
+            
+            // 初始加载日志
+            fetchLogs(levelSelect.value);
+            
+            // 自动刷新 (每10秒)
+            setInterval(() => {
+                if (!document.hidden) {
+                    fetchLogs(levelSelect.value);
+                }
+            }, 10000);
+        });
+    </script>
+</body>
+</html>

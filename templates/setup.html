@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>初始设置 - ClashRuleSync</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* 主色调 */
+            --primary: #3b82f6;
+            --primary-light: #dbeafe;
+            --primary-dark: #1d4ed8;
+            --primary-gradient: linear-gradient(135deg, #3b82f6, #6366f1);
+            
+            /* 文本颜色 */
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --text-tertiary: #6b7280;
+            
+            /* 背景和卡片 */
+            --background: #f8fafc;
+            --card: #ffffff;
+            --card-hover: #f9fafb;
+            
+            /* 边框和阴影 */
+            --border: #e2e8f0;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 6px rgba(0,0,0,0.02);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.04), 0 1px 8px rgba(0,0,0,0.02);
+            --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.05), 0 10px 10px -5px rgba(0,0,0,0.01);
+            
+            /* 状态颜色 */
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --error: #ef4444;
+            --error-light: #fee2e2;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --info: #3b82f6;
+            --info-light: #dbeafe;
+            
+            /* 圆角 */
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            
+            /* 动画 */
+            --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: var(--background);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            padding: 40px 20px;
+        }
+
+        .setup-container {
+            width: 100%;
+            max-width: 880px;
+        }
+
+        .setup-card {
+            background-color: var(--card);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            position: relative;
+            border: 1px solid var(--border);
+        }
+
+        .setup-header {
+            text-align: center;
+            padding: 50px 36px 28px;
+            background: linear-gradient(180deg, rgba(219,234,254,0.3) 0%, rgba(255,255,255,0) 100%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .setup-logo {
+            font-size: 40px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+            display: inline-block;
+        }
+
+        .setup-logo-icon {
+            width: 36px;
+            height: 36px;
+            margin-right: 12px;
+            background-color: var(--primary);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .setup-logo-icon:before, 
+        .setup-logo-icon:after {
+            content: "";
+            position: absolute;
+            background-color: white;
+        }
+        
+        .setup-logo-icon:before {
+            width: 18px;
+            height: 4px;
+            top: 12px;
+            left: 9px;
+            border-radius: 2px;
+        }
+        
+        .setup-logo-icon:after {
+            width: 18px;
+            height: 4px;
+            top: 20px;
+            left: 9px;
+            border-radius: 2px;
+        }
+
+        .setup-subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-top: 12px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .setup-content {
+            padding: 36px;
+        }
+
+        .step {
+            display: none;
+            animation: fadeInScale 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        .step-title {
+            font-size: 25px;
+            font-weight: 600;
+            margin-bottom: 14px;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+
+        .step-description {
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-bottom: 28px;
+            max-width: 700px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 9px;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            color: var(--text-primary);
+            background-color: var(--card);
+            transition: var(--transition);
+            outline: none;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* 下拉框特殊样式 */
+        select.form-input {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            cursor: pointer;
+            padding-right: 40px; /* 为自定义箭头留出空间 */
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--primary-light);
+        }
+
+        .form-help {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            position: relative;
+            padding: 16px;
+            background-color: var(--card);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .checkbox-item:hover {
+            border-color: var(--primary-light);
+            background-color: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
+        .checkbox-item input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        .checkbox-item input:checked + .checkbox-custom {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .checkbox-item input:checked ~ .checkbox-label {
+            color: var(--primary-dark);
+            font-weight: 500;
+        }
+
+        .checkbox-item input:checked + .checkbox-custom:after {
+            display: block;
+        }
+
+        .checkbox-custom {
+            position: relative;
+            height: 22px;
+            width: 22px;
+            border-radius: 6px;
+            border: 2px solid var(--border);
+            background-color: var(--card);
+            transition: var(--transition);
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .checkbox-custom:after {
+            content: "";
+            position: absolute;
+            display: none;
+            left: 7px;
+            top: 3px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .checkbox-label {
+            font-size: 15px;
+            color: var(--text-primary);
+            flex: 1;
+            transition: var(--transition);
+        }
+
+        .checkbox-description {
+            display: block;
+            font-size: 14px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 48px;
+        }
+
+        .button {
+            padding: 12px 25px;
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            outline: none;
+            position: relative;
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .button:active {
+            transform: translateY(1px);
+        }
+
+        .button-icon {
+            margin-right: 8px;
+        }
+
+        .button-primary {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+        }
+
+        .button-primary:hover {
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .button-secondary {
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            border: 1px solid transparent;
+        }
+
+        .button-secondary:hover {
+            background-color: var(--primary-dark);
+            color: white;
+        }
+
+        .button-outline {
+            background-color: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .button-outline:hover {
+            background-color: var(--background);
+            border-color: var(--text-secondary);
+        }
+
+        .detection-progress {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 32px 0;
+        }
+        
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--primary-light);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .detection-result {
+            margin: 24px 0;
+        }
+        
+        .status-message {
+            display: flex;
+        }
+        
+        .status-message > div {
+            flex: 1;
+        }
+        
+        .status-message p {
+            margin: 0;
+        }
+        
+        .status-message p + p {
+            margin-top: 8px;
+            font-size: 14px;
+        }
+
+        /* 规则容器 */
+        .rules-container {
+            margin-top: 16px;
+        }
+        
+        .rules-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 0;
+        }
+        
+        .rules-loading p {
+            margin-top: 16px;
+            color: var(--text-secondary);
+        }
+        
+        .rule-card {
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 18px;
+            margin-bottom: 14px;
+            transition: var(--transition);
+            display: flex;
+            align-items: flex-start;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .rule-card:hover {
+            border-color: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .rule-checkbox {
+            margin-right: 16px;
+            margin-top: 4px;
+        }
+        
+        .rule-checkbox input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            background-color: var(--card);
+            cursor: pointer;
+            transition: var(--transition);
+            appearance: none;
+            -webkit-appearance: none;
+            position: relative;
+            margin: 0;
+        }
+        
+        .rule-checkbox input[type="checkbox"]:checked {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .rule-checkbox input[type="checkbox"]:checked::after {
+            content: "";
+            position: absolute;
+            left: 6px;
+            top: 2px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        
+        .rule-checkbox input[type="checkbox"]:hover {
+            border-color: var(--primary);
+        }
+        
+        .rule-info {
+            flex: 1;
+        }
+        
+        .rule-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        
+        .rule-description {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        
+        .rule-meta {
+            display: flex;
+            align-items: center;
+            color: var(--text-tertiary);
+            font-size: 14px;
+        }
+        
+        .rule-type {
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            padding: 3px 7px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        /* 开关样式 */
+        .toggle-switch {
+            position: relative;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            margin: 8px 0;
+            padding: 8px 0;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            position: absolute;
+        }
+        
+        .toggle-slider {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+            background-color: #ccc;
+            border-radius: 34px;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: var(--primary);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        
+        .toggle-label {
+            margin-left: 12px;
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+        
+        /* 下拉选择框 */
+        .select-wrapper {
+            position: relative;
+        }
+        
+        .select-wrapper svg {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+        
+        /* 完成动画 */
+        .completion-animation {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 40px 0;
+        }
+        
+        .completion-animation p {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--success);
+        }
+        
+        .checkmark {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            display: block;
+            stroke-width: 2;
+            stroke: var(--success);
+            stroke-miterlimit: 10;
+            box-shadow: inset 0px 0px 0px var(--success);
+            animation: fill 0.4s ease-in-out 0.4s forwards, scale 0.3s ease-in-out 0.9s both;
+        }
+        
+        .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 2;
+            stroke-miterlimit: 10;
+            stroke: var(--success);
+            fill: none;
+            animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+        
+        .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+        }
+        
+        @keyframes stroke {
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+        
+        @keyframes scale {
+            0%, 100% {
+                transform: none;
+            }
+            50% {
+                transform: scale3d(1.1, 1.1, 1);
+            }
+        }
+        
+        @keyframes fill {
+            100% {
+                box-shadow: inset 0px 0px 0px 30px var(--success-light);
+            }
+        }
+
+        /* 状态指示器 */
+        .status {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .status-connected {
+            background-color: var(--success-light);
+            color: var(--success);
+        }
+
+        .status-process-only {
+            background-color: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .status-disconnected {
+            background-color: var(--error-light);
+            color: var(--error);
+        }
+
+        /* API教程卡片 */
+        .tutorial-card {
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 18px;
+            margin-top: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tutorial-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .tutorial-step {
+            font-size: 13px;
+            color: var(--text-secondary);
+            padding: 7px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tutorial-step:last-child {
+            border-bottom: none;
+        }
+
+        .tutorial-step code {
+            background-color: var(--background);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        /* 状态指示器 */
+        .flex {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .flex .step-description {
+            margin-bottom: 0;
+            margin-right: 16px;
+            flex: 1;
+        }
+
+        /* 加载更多按钮样式 */
+        .load-more {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .load-more button {
+            background: none;
+            border: 1px solid var(--border);
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .load-more button:hover {
+            background-color: var(--background);
+            border-color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <div class="setup-card">
+            <div class="setup-header">
+                <div class="setup-logo">ClashRuleSync</div>
+                <div class="setup-subtitle">Clash 规则自动同步与管理工具，为您提供更高效的网络体验</div>
+            </div>
+
+            <div class="setup-content">
+                <div class="step active" id="step1">
+                    <h2 class="step-title">欢迎使用 ClashRuleSync</h2>
+                    <p class="step-description">欢迎使用 ClashRuleSync，这是一个专为 Clash 设计的规则自动同步工具。我们将引导您完成几个简单步骤，让您的网络体验更加流畅。</p>
+
+                    <div class="button-group">
+                        <div></div>
+                        <button class="button button-primary" onclick="nextStep(1)">
+                            开始设置
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 8px;"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="step" id="step2">
+                    <h2 class="step-title">API 配置</h2>
+                    <div class="flex">
+                        <p class="step-description">ClashRuleSync 需要通过 Clash API 与 Clash 进行通信。</p>
+                        <span id="clash-status" class="status status-disconnected">检测中...</span>
+                    </div>
+                    
+                    <p id="status-message" style="margin: 14px 0; color: var(--text-secondary);">正在检测 Clash 状态...</p>
+                    
+                    <div id="api-detection-progress" class="detection-progress">
+                        <div class="spinner"></div>
+                        <p>正在检测 Clash API...</p>
+                    </div>
+                    
+                    <!-- API教程卡片 -->
+                    <div id="api-tutorial-card" class="tutorial-card" style="display: none;">
+                        <div class="tutorial-title">如何启用Clash API</div>
+                        <p>检测到Clash正在运行，但无法连接到API。请根据您使用的Clash客户端启用API：</p>
+                        
+                        <div class="tutorial-step">1. 打开Clash for Windows</div>
+                        <div class="tutorial-step">2. 点击左侧菜单中的"设置"（齿轮图标）</div>
+                        <div class="tutorial-step">3. 在"开发者设置"区域，确保"允许局域网连接"已启用</div>
+                        <div class="tutorial-step">4. 记下"控制台端口"的值（默认为9090）</div>
+                        <div class="tutorial-step">5. 如果显示了"API密钥"，也请记下这个值</div>
+                        <div class="tutorial-step">6. 在本页面的"设置"部分，更新API地址为 http://127.0.0.1:端口号 并保存</div>
+                        <div class="tutorial-step">注意：程序将自动尝试从配置文件 <code>%USERPROFILE%\.config\clash\config.yaml</code> 中读取API配置</div>
+                    </div>
+                    
+                    <div id="manual-config" class="detection-result" style="display: none;">
+                        <div class="form-group" style="margin-top: 20px;">
+                            <label class="form-label" for="api-url">Clash API 地址</label>
+                            <input type="text" id="api-url" class="form-input" placeholder="例如：http://127.0.0.1:9090" value="http://127.0.0.1:9090">
+                            <p class="form-help">通常为 http://127.0.0.1:9090（Clash 原版）或 http://127.0.0.1:端口（Clash for Windows）</p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="api-secret">Clash API 密钥</label>
+                            <input type="text" id="api-secret" class="form-input" placeholder="如果没有设置可以留空">
+                            <p class="form-help">在 Clash 配置文件中的 secret 字段，如果未设置可以留空</p>
+                        </div>
+                        
+                        <div id="connection-status" class="status-message" style="display: none;"></div>
+                        
+                        <button class="button button-primary" onclick="testConnection()" style="margin-top: 16px;">
+                            测试连接
+                        </button>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="button button-outline" onclick="prevStep(2)">上一步</button>
+                        <button class="button button-primary" id="next-api-button" onclick="nextStep(2)" disabled>下一步</button>
+                    </div>
+                </div>
+
+                <div class="step" id="step3">
+                    <h2 class="step-title">规则选择</h2>
+                    <p class="step-description">选择您想要启用的规则，这些规则将自动同步到 Clash。我们已为您精选了一系列直连规则，让您的网络体验更流畅。</p>
+                    
+                    <div class="form-group">
+                        <label class="form-label">可用规则</label>
+                        <p class="form-help">选择需要启用的直连规则，这些规则将定期从互联网更新</p>
+                        
+                        <div id="rules-container" class="rules-container">
+                            <!-- 规则列表将通过JavaScript动态加载 -->
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">自动同步选项</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="sync-bypass" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">自动同步直连域名到Clash绕过列表</span>
+                        </label>
+                        <p class="form-help">开启后，将自动将直连域名添加到Clash的绕过代理列表中，提高直连速度</p>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="button button-outline" onclick="prevStep(3)">上一步</button>
+                        <button class="button button-primary" onclick="nextStep(3)">下一步</button>
+                    </div>
+                </div>
+
+                <div class="step" id="step4">
+                    <h2 class="step-title">完成设置</h2>
+                    <p class="step-description">最后一步，设置更新频率和其他选项。</p>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="update-interval">更新频率</label>
+                        <div class="select-wrapper">
+                            <select id="update-interval" class="form-input">
+                                <option value="1">每小时</option>
+                                <option value="6" selected>每6小时</option>
+                                <option value="12">每12小时</option>
+                                <option value="24">每天</option>
+                            </select>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                        <p class="form-help">规则将按照此频率自动更新</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">自启动选项</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="auto-start" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">程序启动时自动运行</span>
+                        </label>
+                        <p class="form-help">开启后，程序启动时将自动运行服务</p>
+
+                        <label class="toggle-switch" style="margin-top: 16px;">
+                            <input type="checkbox" id="system-auto-start" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">系统启动时自动运行</span>
+                        </label>
+                        <p class="form-help">开启后，Windows启动时将自动运行ClashRuleSync</p>
+                    </div>
+                    
+                    <div class="completion-animation" id="completion-animation" style="display: none;">
+                        <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                            <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                            <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                        </svg>
+                        <p>设置完成!</p>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="button button-outline" onclick="prevStep(4)">上一步</button>
+                        <button class="button button-primary" id="complete-button" onclick="completeSetup()">完成设置</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 4;
+        let apiConfig = {
+            url: '',
+            secret: '',
+            detected: false
+        };
+        let selectedRules = [];
+        
+        function updateProgressBar() {
+            const progress = (currentStep / totalSteps) * 100;
+            document.querySelector('.progress-bar').style.width = `${progress}%`;
+        }
+        
+        function showStep(step) {
+            // 隐藏所有步骤
+            document.querySelectorAll('.step').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // 显示当前步骤
+            document.getElementById(`step${step}`).classList.add('active');
+            
+            // 更新进度条
+            currentStep = step;
+            
+            // 如果是步骤2，开始检测API
+            if (step === 2) {
+                detectClashAPI();
+            }
+            
+            // 如果是步骤3，加载规则列表
+            if (step === 3) {
+                loadRules();
+            }
+        }
+        
+        function nextStep(currentStep) {
+            if (currentStep === 1) {
+                showStep(2);
+            } else if (currentStep === 2) {
+                showStep(3);
+            } else if (currentStep === 3) {
+                showStep(4);
+            }
+        }
+        
+        function prevStep(currentStep) {
+            showStep(currentStep - 1);
+        }
+        
+        // API 检测相关功能
+        function detectClashAPI() {
+            const clashStatusEl = document.getElementById('clash-status');
+            const statusMessageEl = document.getElementById('status-message');
+            const apiTutorialCard = document.getElementById('api-tutorial-card');
+            const manualConfigEl = document.getElementById('manual-config');
+            const nextButton = document.getElementById('next-api-button');
+            
+            document.getElementById('api-detection-progress').style.display = 'flex';
+            apiTutorialCard.style.display = 'none';
+            manualConfigEl.style.display = 'none';
+            nextButton.disabled = true;
+            
+            // 发送请求检测API
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('api-detection-progress').style.display = 'none';
+                    
+                    if (data.status === "connected") {
+                        // API正常连接
+                        clashStatusEl.className = 'status status-connected';
+                        clashStatusEl.textContent = '已连接';
+                        statusMessageEl.textContent = data.status_message || '看起来ClashRuleSync已经找到了Clash配置并连接到了Clash API，你可以继续了。';
+                        apiConfig.url = data.clash_api_url;
+                        apiConfig.secret = data.clash_api_secret;
+                        apiConfig.detected = true;
+                        nextButton.disabled = false;
+                        apiTutorialCard.style.display = 'none';
+                        manualConfigEl.style.display = 'none';
+                    } else if (data.status === "process_only") {
+                        // 检测到进程但API未连接
+                        clashStatusEl.className = 'status status-process-only';
+                        clashStatusEl.textContent = 'API未连接';
+                        statusMessageEl.textContent = data.status_message || '检测到Clash正在运行，但无法连接到Clash API。请确保Clash API已启用。';
+                        apiTutorialCard.style.display = 'block';
+                        manualConfigEl.style.display = 'block';
+                        nextButton.disabled = true;
+                    } else {
+                        // 未检测到Clash
+                        clashStatusEl.className = 'status status-disconnected';
+                        clashStatusEl.textContent = '未连接';
+                        statusMessageEl.textContent = data.status_message || '未检测到Clash运行，请先启动Clash。';
+                        manualConfigEl.style.display = 'block';
+                        apiTutorialCard.style.display = 'none';
+                        nextButton.disabled = true;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('api-detection-progress').style.display = 'none';
+                    clashStatusEl.className = 'status status-disconnected';
+                    clashStatusEl.textContent = '错误';
+                    statusMessageEl.textContent = '获取状态失败，请刷新页面重试。';
+                    manualConfigEl.style.display = 'block';
+                    console.error('API检测错误:', error);
+                    nextButton.disabled = true;
+                });
+        }
+        
+        // 每10秒自动更新一次状态
+        setInterval(detectClashAPI, 10000);
+        
+        function testConnection() {
+            const apiUrl = document.getElementById('api-url').value.trim();
+            const apiSecret = document.getElementById('api-secret').value.trim();
+            
+            if (!apiUrl) {
+                showStatusMessage('请输入Clash API地址', 'error');
+                return;
+            }
+            
+            showStatusMessage('正在测试连接...', 'info');
+            
+            // 发送API请求测试连接
+            fetch('/api/test-connection', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ClashAPIURL: apiUrl,
+                    ClashAPISecret: apiSecret
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.connected) {
+                    showStatusMessage('连接成功!', 'success');
+                    apiConfig.url = apiUrl;
+                    apiConfig.secret = apiSecret;
+                    apiConfig.detected = false;
+                    
+                    // 启用下一步按钮
+                    document.getElementById('next-api-button').disabled = false;
+                } else {
+                    showStatusMessage(`连接失败: ${data.error || '未知错误'}`, 'error');
+                    document.getElementById('next-api-button').disabled = true;
+                }
+            })
+            .catch(error => {
+                showStatusMessage(`请求错误: ${error.message}`, 'error');
+                document.getElementById('next-api-button').disabled = true;
+            });
+        }
+        
+        function showStatusMessage(message, type) {
+            const statusEl = document.getElementById('connection-status');
+            statusEl.innerHTML = `
+                <div class="status-icon">
+                    ${type === 'success' ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>' : 
+                    type === 'error' ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>' : 
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>'}
+                </div>
+                <div>${message}</div>
+            `;
+            statusEl.className = 'status-message';
+            
+            if (type === 'success') {
+                statusEl.classList.add('status-success');
+            } else if (type === 'error') {
+                statusEl.classList.add('status-error');
+            } else {
+                statusEl.classList.add('status-info');
+            }
+            
+            statusEl.style.display = 'flex';
+        }
+        
+        // 规则加载相关功能
+        async function loadRules() {
+            const rulesContainer = document.getElementById('rules-container');
+            const rulesPerPage = 2; // 每页显示2个规则
+            let currentPage = 1;
+            let allRules = [];
+            
+            try {
+                const response = await fetch('/static/config/default-rules.json');
+                const data = await response.json();
+                
+                if (data.rules && data.rules.length > 0) {
+                    // 按优先级排序规则
+                    allRules = data.rules.sort((a, b) => a.priority - b.priority);
+                    
+                    // 渲染初始规则
+                    renderRules(allRules.slice(0, rulesPerPage));
+                    
+                    // 如果还有更多规则，显示加载更多按钮
+                    if (allRules.length > rulesPerPage) {
+                        const loadMoreDiv = document.createElement('div');
+                        loadMoreDiv.className = 'load-more';
+                        loadMoreDiv.innerHTML = `
+                            <button onclick="loadMoreRules()">
+                                加载更多规则 (${rulesPerPage}/${allRules.length})
+                            </button>
+                        `;
+                        rulesContainer.appendChild(loadMoreDiv);
+                    }
+                    
+                    // 保存规则数据到全局变量
+                    window.ruleData = {
+                        allRules,
+                        currentPage,
+                        rulesPerPage
+                    };
+                } else {
+                    rulesContainer.innerHTML = '<div class="no-rules">未找到可用规则</div>';
+                }
+            } catch (error) {
+                console.error('加载规则失败:', error);
+                rulesContainer.innerHTML = `
+                    <div class="rules-error">
+                        <p>加载规则失败，请刷新页面重试</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // 渲染规则列表
+        function renderRules(rules) {
+            const rulesContainer = document.getElementById('rules-container');
+            let rulesHTML = '';
+            
+            rules.forEach(rule => {
+                const typeLabel = getTypeLabel(rule.type);
+                
+                rulesHTML += `
+                    <div class="rule-card">
+                        <div class="rule-checkbox">
+                            <input type="checkbox" class="rule-checkbox-input" value="${rule.url}" data-name="${rule.name}" data-type="${rule.type}">
+                        </div>
+                        <div class="rule-info">
+                            <div class="rule-name">${rule.name}</div>
+                            <div class="rule-description">${rule.description}</div>
+                            <div class="rule-meta">
+                                <span class="rule-type">${typeLabel}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // 如果是第一页，直接设置HTML
+            if (window.ruleData?.currentPage === 1) {
+                rulesContainer.innerHTML = rulesHTML;
+            } else {
+                // 否则移除旧的加载更多按钮
+                const loadMoreBtn = rulesContainer.querySelector('.load-more');
+                if (loadMoreBtn) {
+                    loadMoreBtn.remove();
+                }
+                // 添加新的规则到容器
+                rulesContainer.insertAdjacentHTML('beforeend', rulesHTML);
+            }
+            
+            // 重新绑定规则选择事件
+            document.querySelectorAll('.rule-checkbox-input').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const ruleName = this.getAttribute('data-name');
+                    const ruleUrl = this.value;
+                    const ruleType = this.getAttribute('data-type');
+                    
+                    if (this.checked) {
+                        selectedRules.push({
+                            name: ruleName,
+                            url: ruleUrl,
+                            type: ruleType
+                        });
+                    } else {
+                        selectedRules = selectedRules.filter(rule => rule.url !== ruleUrl);
+                    }
+                });
+            });
+        }
+        
+        // 加载更多规则
+        function loadMoreRules() {
+            const { allRules, currentPage, rulesPerPage } = window.ruleData;
+            const nextPage = currentPage + 1;
+            const start = currentPage * rulesPerPage;
+            const end = start + rulesPerPage;
+            
+            // 渲染下一页规则
+            renderRules(allRules.slice(start, end));
+            
+            // 更新当前页码
+            window.ruleData.currentPage = nextPage;
+            
+            // 如果还有更多规则，添加新的加载更多按钮
+            if (end < allRules.length) {
+                const rulesContainer = document.getElementById('rules-container');
+                const loadMoreDiv = document.createElement('div');
+                loadMoreDiv.className = 'load-more';
+                loadMoreDiv.innerHTML = `
+                    <button onclick="loadMoreRules()">
+                        加载更多规则 (${end}/${allRules.length})
+                    </button>
+                `;
+                rulesContainer.appendChild(loadMoreDiv);
+            }
+        }
+        
+        function getTypeLabel(type) {
+            switch (type) {
+                case 'domain':
+                    return '域名规则';
+                case 'ipcidr':
+                    return 'IP规则';
+                case 'classical':
+                    return '应用规则';
+                default:
+                    return '未知类型';
+            }
+        }
+        
+        function completeSetup() {
+            // 禁用完成按钮
+            document.getElementById('complete-button').disabled = true;
+            document.getElementById('complete-button').textContent = '已提交任务，耐心等待一会...';
+            
+            // 收集所有设置
+            const apiUrl = apiConfig.url;
+            const apiSecret = apiConfig.secret;
+            const autoStart = document.getElementById('auto-start').checked;
+            const systemAutoStart = document.getElementById('system-auto-start').checked;
+            const updateInterval = document.getElementById('update-interval').value;
+            
+            // 直接使用选中的规则列表
+            console.log("选中的规则:", selectedRules);
+            
+            // 发送设置到服务器
+            fetch('/api/setup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    clashApiUrl: apiUrl,
+                    clashApiSecret: apiSecret,
+                    updateInterval: parseInt(updateInterval),
+                    autoStartEnabled: autoStart,
+                    systemAutoStartEnabled: systemAutoStart,
+                    selectedRules: selectedRules // 直接发送选中的规则列表
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'ok' || data.status === 'success') {  // 同时支持 ok 和 success
+                    // 显示完成动画
+                    document.getElementById('completion-animation').style.display = 'flex';
+                    
+                    // 3秒后重定向到主页
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 3000);
+                } else {
+                    alert(`设置失败: ${data.message || '未知错误'}`);
+                    document.getElementById('complete-button').disabled = false;
+                    document.getElementById('complete-button').textContent = '完成设置';
+                }
+            })
+            .catch(error => {
+                alert(`请求错误: ${error.message}`);
+                document.getElementById('complete-button').disabled = false;
+                document.getElementById('complete-button').textContent = '完成设置';
+            });
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            showStep(1);
+        });
+    </script>
+</body>
+</html> 

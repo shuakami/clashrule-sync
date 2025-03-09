@@ -1,0 +1,53 @@
+{
+  "rules": [
+    {
+      "name": "直连域名列表",
+      "url": "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/direct.txt",
+      "description": "通用直连规则，包含常见的中国大陆网站域名，直连可获得更好的速度和体验",
+      "type": "domain",
+      "priority": 10
+    },
+    {
+      "name": "私有网络域名",
+      "url": "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/private.txt",
+      "description": "私有网络专用域名列表，这些域名通常用于局域网或企业内部网络，应当直接连接",
+      "type": "domain",
+      "priority": 20
+    },
+    {
+      "name": "局域网IP地址",
+      "url": "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/lancidr.txt",
+      "description": "局域网IP及保留IP地址列表，这些地址用于本地网络通信，应当直接连接而不经过代理",
+      "type": "ipcidr",
+      "priority": 30
+    },
+    {
+      "name": "中国大陆IP地址",
+      "url": "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/cncidr.txt",
+      "description": "中国大陆IP地址列表，这些IP地址通常可以直接连接，不需要经过代理",
+      "type": "ipcidr",
+      "priority": 40
+    },
+    {
+      "name": "常用软件直连列表",
+      "url": "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/applications.txt",
+      "description": "需要直连的常见软件列表，包含一些中国大陆开发的应用或游戏，直连可获得更好的体验",
+      "type": "classical",
+      "priority": 50
+    },
+    {
+      "name": "Apple直连域名",
+      "url": "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/apple.txt",
+      "description": "Apple在中国大陆可直连的域名列表，这些域名通常有中国境内的CDN，可以直接连接获得更好的速度",
+      "type": "domain",
+      "priority": 60
+    },
+    {
+      "name": "Google直连域名",
+      "url": "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release/google.txt",
+      "description": "Google在中国大陆可直连的域名列表（部分可用），这些域名有中国境内的服务器，部分场景下可直连",
+      "type": "domain",
+      "priority": 70
+    }
+  ]
+} 
