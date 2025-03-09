@@ -34,21 +34,28 @@ func LoadTemplate(templateName string) (*template.Template, error) {
 		execDir = "."
 	}
 
-	// 加载模板，使用平台无关的路径拼接
-	templatePath := filepath.Join(execDir, "templates", templateName)
-	tmpl, err := template.ParseFiles(templatePath)
-	if err != nil {
-		// 如果在执行目录中找不到模板，尝试在当前工作目录中查找
-		templatePathFallback := filepath.Join("templates", templateName)
-		tmpl, err = template.ParseFiles(templatePathFallback)
-		if err != nil {
-			return nil, err
-		}
+	// 尝试多个可能的路径
+	templatePaths := []string{
+		filepath.Join(execDir, "templates", templateName),        // 1. 可执行文件目录下的templates
+		filepath.Join("templates", templateName),                 // 2. 当前工作目录下的templates
+		filepath.Join(execDir, "..", "templates", templateName),  // 3. 可执行文件上级目录的templates
 	}
 
-	// 缓存模板
-	templateCache[templateName] = tmpl
-	return tmpl, nil
+	// 尝试加载模板
+	var lastErr error
+	for _, path := range templatePaths {
+		tmpl, err := template.ParseFiles(path)
+		if err == nil {
+			// 缓存模板
+			templateCache[templateName] = tmpl
+			return tmpl, nil
+		}
+		lastErr = err
+		logger.Debugf("尝试加载模板 %s 失败: %v", path, err)
+	}
+
+	// 所有路径都失败了，返回最后一个错误
+	return nil, lastErr
 }
 
 // GetRulesDir 获取规则目录

@@ -50,10 +50,23 @@ jobs:
       - name: Prepare Package
         run: |
           mkdir -p release
+          cp -r templates .
           if [ "${{ matrix.goos }}" = "windows" ]; then
-            ${{ matrix.compress_cmd }} release/${{ matrix.asset_name }} "ClashRuleSync${{ matrix.extension }}" LICENSE README.md
+            mkdir -p windows_package
+            cp "ClashRuleSync${{ matrix.extension }}" windows_package/
+            cp LICENSE windows_package/
+            cp README.md windows_package/
+            cp -r templates windows_package/
+            cd windows_package
+            ${{ matrix.compress_cmd }} ../release/${{ matrix.asset_name }} *
           else
-            ${{ matrix.compress_cmd }} release/${{ matrix.asset_name }} "ClashRuleSync${{ matrix.extension }}" LICENSE README.md
+            mkdir -p package
+            cp "ClashRuleSync${{ matrix.extension }}" package/
+            cp LICENSE package/
+            cp README.md package/
+            cp -r templates package/
+            cd package
+            ${{ matrix.compress_cmd }} ../release/${{ matrix.asset_name }} *
           fi
 
       - name: Upload Build Artifact
