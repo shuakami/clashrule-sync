@@ -123,9 +123,9 @@ func (h *RulesHandler) HandleEditRule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 解析请求
+	// 解析请求体
 	var req struct {
-		Index int                 `json:"index"`
+		Index int               `json:"index"`
 		Rule  config.RuleProvider `json:"rule"`
 	}
 
@@ -133,20 +133,20 @@ func (h *RulesHandler) HandleEditRule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 验证规则数据
+	// 验证规则
 	if err := validateRuleProvider(req.Rule); err != nil {
 		common.SendBadRequest(w, err.Error(), nil)
 		return
 	}
 
 	// 检查规则索引是否有效
-	if req.Index < 0 || req.Index >= len(h.Config.CustomRules.RuleProviders) {
+	if req.Index < 0 || req.Index >= len(h.Config.RuleProviders) {
 		common.SendBadRequest(w, "无效的规则索引", nil)
 		return
 	}
 
 	// 获取当前规则
-	oldRule := h.Config.CustomRules.RuleProviders[req.Index]
+	oldRule := h.Config.RuleProviders[req.Index]
 
 	// 确保Path和名称的匹配 - 保留原路径但更新文件名
 	pathDir := filepath.Dir(oldRule.Path)
@@ -166,7 +166,7 @@ func (h *RulesHandler) HandleEditRule(w http.ResponseWriter, r *http.Request) {
 			if utils.FileExists(newFilePath) && oldFilePath != newFilePath {
 				if err := os.Remove(newFilePath); err != nil {
 					logger.Printf("无法删除已存在的规则文件 %s: %v", newFilePath, err)
-					common.SendErrorResponse(w, "无法更新规则文件", err)
+					common.SendErrorResponse(w, http.StatusInternalServerError, "无法更新规则文件", err)
 					return
 				}
 			}
@@ -175,7 +175,7 @@ func (h *RulesHandler) HandleEditRule(w http.ResponseWriter, r *http.Request) {
 			if oldFilePath != newFilePath {
 				if err := os.Rename(oldFilePath, newFilePath); err != nil {
 					logger.Printf("无法重命名规则文件 %s 为 %s: %v", oldFilePath, newFilePath, err)
-					common.SendErrorResponse(w, "无法重命名规则文件", err)
+					common.SendErrorResponse(w, http.StatusInternalServerError, "无法重命名规则文件", err)
 					return
 				}
 				logger.Printf("成功重命名规则文件: %s -> %s", oldFilePath, newFilePath)
@@ -184,12 +184,12 @@ func (h *RulesHandler) HandleEditRule(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 更新配置中的规则
-	h.Config.CustomRules.RuleProviders[req.Index] = req.Rule
+	h.Config.RuleProviders[req.Index] = req.Rule
 
 	// 保存配置
-	if err := h.Config.SaveCustomRules(); err != nil {
+	if err := h.Config.SaveConfig(); err != nil {
 		logger.Printf("保存规则配置失败: %v", err)
-		common.SendErrorResponse(w, "保存规则配置失败", err)
+		common.SendErrorResponse(w, http.StatusInternalServerError, "保存规则配置失败", err)
 		return
 	}
 
@@ -333,4 +333,10 @@ func (h *RulesHandler) HandleSyncBypass(w http.ResponseWriter, r *http.Request) 
 	}
 
 	common.SendJSONResponse(w, resp)
+}
+
+// notifyRuleUpdate 通知规则更新完成并发送成功响应
+func (h *RulesHandler) notifyRuleUpdate(w http.ResponseWriter) {
+	// 发送成功响应
+	common.SendSuccessResponse(w, "规则更新成功", nil)
 }

@@ -3,7 +3,9 @@ package common
 import (
 	"html/template"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"strings"
 
 	"github.com/shuakami/clashrule-sync/pkg/logger"
 	"github.com/shuakami/clashrule-sync/pkg/utils"
@@ -47,6 +49,46 @@ func EnsureRulesDir() (string, error) {
 	rulesDir := GetRulesDir()
 	err := utils.EnsureDirExists(rulesDir)
 	return rulesDir, err
+}
+
+// MakeSafeFilename 创建安全的文件名，移除非法字符
+func MakeSafeFilename(name string) string {
+	// 移除或替换非法字符
+	reg := regexp.MustCompile(`[<>:"/\\|?*\x00-\x1F]`)
+	safe := reg.ReplaceAllString(name, "_")
+	
+	// 去除前后空格
+	safe = strings.TrimSpace(safe)
+	
+	// 确保文件名不为空
+	if safe == "" {
+		safe = "rule"
+	}
+	
+	return safe
+}
+
+// ResolvePath 解析相对路径为绝对路径
+func ResolvePath(path string) string {
+	// 如果是绝对路径，直接返回
+	if filepath.IsAbs(path) {
+		return path
+	}
+	
+	// 如果是相对于规则目录的路径
+	if !strings.HasPrefix(path, "rules/") && !strings.HasPrefix(path, "rules\\") {
+		// 获取规则目录
+		rulesDir := GetRulesDir()
+		return filepath.Join(rulesDir, path)
+	}
+	
+	// 如果已经是相对于规则目录的路径，去掉前缀
+	path = strings.TrimPrefix(path, "rules/")
+	path = strings.TrimPrefix(path, "rules\\")
+	
+	// 获取规则目录
+	rulesDir := GetRulesDir()
+	return filepath.Join(rulesDir, path)
 }
 
 // OpenBrowser 打开浏览器
