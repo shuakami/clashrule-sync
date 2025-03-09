@@ -50,7 +50,6 @@ jobs:
       - name: Prepare Package
         run: |
           mkdir -p release
-          cp -r templates .
           echo "请勿删除templates目录！此目录包含程序运行所需的网页模板文件，必须与主程序放在同一目录下。" > "重要说明-不要删除templates文件夹.txt"
           if [ "${{ matrix.goos }}" = "windows" ]; then
             mkdir -p windows_package
