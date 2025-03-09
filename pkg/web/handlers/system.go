@@ -3,11 +3,8 @@ package handlers
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
-
-	"golang.org/x/sys/windows/registry"
 
 	"github.com/shuakami/clashrule-sync/pkg/config"
 	"github.com/shuakami/clashrule-sync/pkg/logger"

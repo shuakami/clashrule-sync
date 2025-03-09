@@ -18,6 +18,15 @@ import (
 	"github.com/shuakami/clashrule-sync/pkg/utils"
 )
 
+// 记录进程信息，用于重启
+type ProcessInfo struct {
+	path string
+	name string
+	pid  int32
+	cmd  string
+	args []string
+}
+
 // 默认API配置
 const DefaultAPIURL = "http://127.0.0.1:9090"
 
@@ -392,14 +401,6 @@ func RestartClash() error {
 	// 记录启动时间，用于计算整个过程耗时
 	startTime := time.Now()
 
-	// 记录进程信息，用于重启
-	type ProcessInfo struct {
-		path string
-		name string
-		pid  int32
-		cmd  string
-		args []string
-	}
 	var processesToRestart []ProcessInfo
 
 	// 先加载上次成功的路径
