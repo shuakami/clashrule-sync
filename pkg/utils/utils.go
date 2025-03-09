@@ -1,11 +1,14 @@
 package utils
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -94,20 +97,16 @@ func FileExists(path string) bool {
 // CreateBackgroundProcess 创建后台进程
 func CreateBackgroundProcess(command string, args ...string) *exec.Cmd {
 	cmd := exec.Command(command, args...)
-	cmd.Stdout = nil
-	cmd.Stderr = nil
 	return cmd
 }
 
 // CreateHiddenWindowsProcess 创建一个在Windows上隐藏窗口的进程
 func CreateHiddenWindowsProcess(command string, args ...string) *exec.Cmd {
 	cmd := exec.Command(command, args...)
-	if IsWindows() {
-		// Windows特有的设置，使窗口不显示
-		cmd.SysProcAttr = &syscall.SysProcAttr{
-			HideWindow: true,
-		}
-	}
+	
+	// 使用平台特定的实现
+	hideWindowsProcess(cmd)
+	
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	return cmd
