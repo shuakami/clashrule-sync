@@ -18,7 +18,7 @@ jobs:
           - goos: windows
             extension: .exe
             asset_name: ClashRuleSync-windows-amd64.zip
-            compress_cmd: zip -j
+            compress_cmd: zip -r
           - goos: darwin
             extension: ''
             asset_name: ClashRuleSync-macos-amd64.tar.gz
