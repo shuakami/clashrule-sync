@@ -69,17 +69,7 @@ func (h *SystemHandler) RemoveSystemAutoStart() error {
 }
 
 // 各平台的实现
-func (h *SystemHandler) setWindowsAutoStart(executable string) error {
-	logger.Info("在Windows中设置自启动")
-	// 在Windows中的具体实现会在编译时选择
-	return h.setDummyAutoStart(executable)
-}
-
-func (h *SystemHandler) removeWindowsAutoStart() error {
-	logger.Info("在Windows中移除自启动")
-	// 在Windows中的具体实现会在编译时选择
-	return h.removeDummyAutoStart()
-}
+// Windows平台的实现已移至system_windows.go和system_nonwindows.go
 
 func (h *SystemHandler) setMacOSAutoStart(executable string) error {
 	logger.Info("在macOS中设置自启动")
