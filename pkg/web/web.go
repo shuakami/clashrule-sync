@@ -15,8 +15,8 @@ import (
 	"github.com/shuakami/clashrule-sync/pkg/web/middleware"
 )
 
-// 程序版本
-const Version = "0.1.0"
+// Version 应用程序版本
+const Version = "0.1.7"
 
 // WebServer 表示 Web 服务器
 type WebServer struct {
