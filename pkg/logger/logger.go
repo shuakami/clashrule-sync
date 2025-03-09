@@ -48,7 +48,7 @@ func ensureDirExists(dirPath string) error {
 // 初始化日志系统
 func init() {
 	Log = logrus.New()
-	
+
 	// 设置日志格式
 	Log.SetFormatter(&logrus.TextFormatter{
 		ForceColors:               true,
@@ -254,4 +254,4 @@ func SetLogLevel(level string) {
 	default:
 		Log.SetLevel(logrus.InfoLevel)
 	}
-} 
+}

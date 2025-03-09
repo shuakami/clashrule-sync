@@ -24,13 +24,13 @@ type RuleUpdater struct {
 	updateHistory []UpdateRecord
 	mutex         sync.RWMutex
 	// 添加HTTP客户端，避免每次创建新的
-	client        *http.Client
+	client *http.Client
 }
 
 // UpdateRecord 记录规则更新历史
 type UpdateRecord struct {
-	Time      time.Time         `json:"time"`
-	Providers []ProviderRecord  `json:"providers"`
+	Time      time.Time        `json:"time"`
+	Providers []ProviderRecord `json:"providers"`
 }
 
 // ProviderRecord 记录单个规则提供者的更新情况
@@ -51,7 +51,7 @@ func NewRuleUpdater(cfg *config.Config) *RuleUpdater {
 			IdleConnTimeout:     60 * time.Second,
 		},
 	}
-	
+
 	return &RuleUpdater{
 		cfg:           cfg,
 		updateHistory: []UpdateRecord{},
@@ -63,7 +63,7 @@ func NewRuleUpdater(cfg *config.Config) *RuleUpdater {
 func (ru *RuleUpdater) GetUpdateHistory() []UpdateRecord {
 	ru.mutex.RLock()
 	defer ru.mutex.RUnlock()
-	
+
 	// 返回副本避免外部修改
 	history := make([]UpdateRecord, len(ru.updateHistory))
 	copy(history, ru.updateHistory)
@@ -76,7 +76,7 @@ func (ru *RuleUpdater) UpdateAllRules() (bool, error) {
 	defer ru.mutex.Unlock()
 
 	logger.Info("开始更新所有规则...")
-	
+
 	// 创建一个新的更新记录
 	record := UpdateRecord{
 		Time:      time.Now(),
@@ -88,44 +88,44 @@ func (ru *RuleUpdater) UpdateAllRules() (bool, error) {
 	if err := utils.EnsureDirExists(rulesDir); err != nil {
 		return false, fmt.Errorf("创建规则目录失败: %v", err)
 	}
-	
+
 	allSuccess := true
-	
+
 	// 用于收集所有规则内容
 	var allRuleContents []string
-	
+
 	// 并行下载规则
 	var wg sync.WaitGroup
-	
+
 	// 使用channel传递结果
 	type ruleResult struct {
-		provider   config.RuleProvider
-		record     ProviderRecord
+		provider    config.RuleProvider
+		record      ProviderRecord
 		ruleContent string
 	}
 	resultChan := make(chan ruleResult, len(ru.cfg.RuleProviders))
-	
+
 	// 遍历所有规则提供者
 	for _, provider := range ru.cfg.RuleProviders {
 		if !provider.Enabled {
 			continue
 		}
-		
+
 		wg.Add(1)
 		go func(provider config.RuleProvider) {
 			defer wg.Done()
-			
+
 			logger.Infof("更新规则: %s", provider.Name)
-			
+
 			providerRecord := ProviderRecord{
 				Name:    provider.Name,
 				Success: false,
 				Message: "",
 			}
-			
+
 			// 下载并处理规则
 			ruleFilePath := filepath.Join(rulesDir, provider.Path)
-			
+
 			var ruleContent string
 			err := ru.downloadAndProcessRule(provider, ruleFilePath)
 			if err != nil {
@@ -134,11 +134,11 @@ func (ru *RuleUpdater) UpdateAllRules() (bool, error) {
 				resultChan <- ruleResult{provider, providerRecord, ""}
 				return
 			}
-			
+
 			logger.Infof("规则 %s 更新成功", provider.Name)
 			providerRecord.Success = true
 			providerRecord.Message = "更新成功"
-			
+
 			// 读取所有规则文件内容
 			content, err := os.ReadFile(ruleFilePath)
 			if err == nil {
@@ -147,17 +147,17 @@ func (ru *RuleUpdater) UpdateAllRules() (bool, error) {
 			} else {
 				logger.Errorf("读取规则文件 %s 失败: %v", ruleFilePath, err)
 			}
-			
+
 			resultChan <- ruleResult{provider, providerRecord, ruleContent}
 		}(provider)
 	}
-	
+
 	// 等待所有下载完成
 	go func() {
 		wg.Wait()
 		close(resultChan)
 	}()
-	
+
 	// 收集结果
 	for result := range resultChan {
 		record.Providers = append(record.Providers, result.record)
@@ -168,16 +168,16 @@ func (ru *RuleUpdater) UpdateAllRules() (bool, error) {
 			allRuleContents = append(allRuleContents, result.ruleContent)
 		}
 	}
-	
+
 	// 更新最后一次更新时间
 	ru.cfg.UpdateLastUpdateTime()
-	
+
 	// 将记录添加到更新历史
 	ru.updateHistory = append(ru.updateHistory, record)
 	if len(ru.updateHistory) > 10 {
 		ru.updateHistory = ru.updateHistory[len(ru.updateHistory)-10:]
 	}
-	
+
 	// 无条件同步所有规则
 	if len(allRuleContents) > 0 {
 		combinedRules := strings.Join(allRuleContents, "\n")
@@ -189,9 +189,9 @@ func (ru *RuleUpdater) UpdateAllRules() (bool, error) {
 			logger.Info("成功将规则同步到CFW绕过配置")
 		}
 	}
-	
+
 	logger.Info("规则更新完成")
-	
+
 	return allSuccess, nil
 }
 
@@ -199,7 +199,7 @@ func (ru *RuleUpdater) UpdateAllRules() (bool, error) {
 func (ru *RuleUpdater) UpdateRuleProvider(providerName string) (bool, error) {
 	ru.mutex.Lock()
 	defer ru.mutex.Unlock()
-	
+
 	// 查找指定的规则提供者
 	var provider *config.RuleProvider
 	for i := range ru.cfg.RuleProviders {
@@ -208,23 +208,23 @@ func (ru *RuleUpdater) UpdateRuleProvider(providerName string) (bool, error) {
 			break
 		}
 	}
-	
+
 	if provider == nil {
 		return false, fmt.Errorf("未找到规则提供者: %s", providerName)
 	}
-	
+
 	if !provider.Enabled {
 		return false, fmt.Errorf("规则提供者已禁用: %s", providerName)
 	}
-	
+
 	logger.Infof("更新规则: %s", provider.Name)
-	
+
 	// 创建规则目录
 	rulesDir := ru.getRulesDir()
 	if err := utils.EnsureDirExists(rulesDir); err != nil {
 		return false, fmt.Errorf("创建规则目录失败: %v", err)
 	}
-	
+
 	// 下载并处理规则
 	ruleFilePath := filepath.Join(rulesDir, provider.Path)
 	err := ru.downloadAndProcessRule(*provider, ruleFilePath)
@@ -233,10 +233,10 @@ func (ru *RuleUpdater) UpdateRuleProvider(providerName string) (bool, error) {
 		ru.recordUpdateHistory(provider.Name, false, err.Error())
 		return false, err
 	}
-	
+
 	// 如果这是直连域名规则，同步到CFW的绕过配置
-	if (provider.Name == "cn_domain" || strings.Contains(provider.Name, "direct")) && 
-	   (provider.Type == "domain" || provider.Type == "mixed") {
+	if (provider.Name == "cn_domain" || strings.Contains(provider.Name, "direct")) &&
+		(provider.Type == "domain" || provider.Type == "mixed") {
 		// 读取规则文件内容
 		ruleContent, err := os.ReadFile(ruleFilePath)
 		if err == nil {
@@ -249,10 +249,10 @@ func (ru *RuleUpdater) UpdateRuleProvider(providerName string) (bool, error) {
 			}
 		}
 	}
-	
+
 	// 记录更新历史
 	ru.recordUpdateHistory(provider.Name, true, "更新成功")
-	
+
 	return true, nil
 }
 
@@ -267,7 +267,7 @@ func (ru *RuleUpdater) recordUpdateHistory(name string, success bool, message st
 			record = latestRecord
 		}
 	}
-	
+
 	// 如果没有合适的记录，创建新记录
 	if record == nil {
 		newRecord := UpdateRecord{
@@ -276,20 +276,20 @@ func (ru *RuleUpdater) recordUpdateHistory(name string, success bool, message st
 		}
 		ru.updateHistory = append(ru.updateHistory, newRecord)
 		record = &ru.updateHistory[len(ru.updateHistory)-1]
-		
+
 		// 限制历史记录数量
 		if len(ru.updateHistory) > 10 {
 			ru.updateHistory = ru.updateHistory[len(ru.updateHistory)-10:]
 		}
 	}
-	
+
 	// 添加或更新提供者记录
 	providerRecord := ProviderRecord{
 		Name:    name,
 		Success: success,
 		Message: message,
 	}
-	
+
 	// 检查是否已存在此提供者的记录
 	for i, pr := range record.Providers {
 		if pr.Name == name {
@@ -297,7 +297,7 @@ func (ru *RuleUpdater) recordUpdateHistory(name string, success bool, message st
 			return
 		}
 	}
-	
+
 	// 不存在则添加新记录
 	record.Providers = append(record.Providers, providerRecord)
 }
@@ -336,12 +336,12 @@ func (ru *RuleUpdater) downloadAndProcessRule(provider config.RuleProvider, outp
 
 	// 处理规则内容
 	content := string(body)
-	
+
 	// 检查内容是否已经是YAML格式
-	if strings.Contains(content, "payload:") || 
-	   strings.Contains(content, "bypass:") || 
-	   strings.Contains(content, "domain:") || 
-	   strings.Contains(content, "ip-cidr:") {
+	if strings.Contains(content, "payload:") ||
+		strings.Contains(content, "bypass:") ||
+		strings.Contains(content, "domain:") ||
+		strings.Contains(content, "ip-cidr:") {
 		// 已经是YAML格式，直接写入
 		err = os.WriteFile(outputPath, body, 0644)
 		if err != nil {
@@ -349,7 +349,7 @@ func (ru *RuleUpdater) downloadAndProcessRule(provider config.RuleProvider, outp
 		}
 		return nil
 	}
-	
+
 	// 根据类型处理规则
 	var processedRules string
 	switch provider.Type {
@@ -389,7 +389,7 @@ func processDomainRules(content, providerName string) string {
 	// 构造YAML格式的域名规则
 	var builder strings.Builder
 	builder.WriteString(fmt.Sprintf("payload:\n"))
-	
+
 	// 如果没有有效规则，添加注释
 	if len(domains) == 0 {
 		builder.WriteString(fmt.Sprintf("  # 空规则文件 - %s\n", providerName))
@@ -418,7 +418,7 @@ func processIPCIDRRules(content, providerName string) string {
 	// 构造YAML格式的IP CIDR规则
 	var builder strings.Builder
 	builder.WriteString(fmt.Sprintf("payload:\n"))
-	
+
 	// 如果没有有效规则，添加注释
 	if len(ipCidrs) == 0 {
 		builder.WriteString(fmt.Sprintf("  # 空规则文件 - %s\n", providerName))
@@ -447,7 +447,7 @@ func processMixedRules(content, providerName string) string {
 	// 构造YAML格式的混合规则
 	var builder strings.Builder
 	builder.WriteString(fmt.Sprintf("payload:\n"))
-	
+
 	// 如果没有有效规则，添加注释
 	if len(rules) == 0 {
 		builder.WriteString(fmt.Sprintf("  # 空规则文件 - %s\n", providerName))
@@ -458,4 +458,4 @@ func processMixedRules(content, providerName string) string {
 	}
 
 	return builder.String()
-} 
+}

@@ -19,8 +19,8 @@ type ConfigHandler struct {
 // NewConfigHandler 创建配置处理器
 func NewConfigHandler(cfg *config.Config, clashAPI *api.ClashAPI, systemAutoStartHandler func() error) *ConfigHandler {
 	return &ConfigHandler{
-		Config:               cfg,
-		ClashAPI:             clashAPI,
+		Config:                cfg,
+		ClashAPI:              clashAPI,
 		HandleSystemAutoStart: systemAutoStartHandler,
 	}
 }
@@ -77,14 +77,14 @@ func (h *ConfigHandler) HandleToggleAutoStart(w http.ResponseWriter, r *http.Req
 	var req struct {
 		Enabled bool `json:"enabled"`
 	}
-	
+
 	if !common.ParseJSON(w, r, &req) {
 		return
 	}
 
 	// 更新配置
 	h.Config.AutoStartEnabled = req.Enabled
-	
+
 	// 保存配置
 	if err := h.Config.SaveConfig(); err != nil {
 		common.SendInternalError(w, "保存配置失败", err)
@@ -105,14 +105,14 @@ func (h *ConfigHandler) HandleToggleSystemAutoStart(w http.ResponseWriter, r *ht
 	var req struct {
 		Enabled bool `json:"enabled"`
 	}
-	
+
 	if !common.ParseJSON(w, r, &req) {
 		return
 	}
 
 	// 更新配置
 	h.Config.SystemAutoStartEnabled = req.Enabled
-	
+
 	// 保存配置
 	if err := h.Config.SaveConfig(); err != nil {
 		common.SendInternalError(w, "保存配置失败", err)
@@ -130,4 +130,4 @@ func (h *ConfigHandler) HandleToggleSystemAutoStart(w http.ResponseWriter, r *ht
 
 	// 发送成功响应
 	common.SendSuccessResponse(w, "系统自启动设置已更新", nil)
-} 
+}

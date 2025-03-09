@@ -46,14 +46,14 @@ func SendErrorResponse(w http.ResponseWriter, statusCode int, message string, er
 		Status:  "error",
 		Message: message,
 	}
-	
+
 	if err != nil {
 		resp.Error = err.Error()
 		logger.Errorf("错误: %s - %v", message, err)
 	} else {
 		logger.Infof("错误: %s", message)
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	if encodeErr := json.NewEncoder(w).Encode(resp); encodeErr != nil {
@@ -102,4 +102,4 @@ func ParseJSON(w http.ResponseWriter, r *http.Request, v interface{}) bool {
 		return false
 	}
 	return true
-} 
+}

@@ -129,15 +129,15 @@ func (h *SystemHandler) removeWindowsAutoStart() error {
 func (h *SystemHandler) setMacOSAutoStart(executable string) error {
 	homeDir := utils.GetHomeDir()
 	launchAgentsDir := filepath.Join(homeDir, "Library", "LaunchAgents")
-	
+
 	// 确保LaunchAgents目录存在
 	err := utils.EnsureDirExists(launchAgentsDir)
 	if err != nil {
 		return fmt.Errorf("创建LaunchAgents目录失败: %v", err)
 	}
-	
+
 	plistPath := filepath.Join(launchAgentsDir, "com.shuakami.clashrule-sync.plist")
-	
+
 	// 创建plist文件内容
 	plistContent := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -155,19 +155,19 @@ func (h *SystemHandler) setMacOSAutoStart(executable string) error {
 	<false/>
 </dict>
 </plist>`, executable)
-	
+
 	// 写入plist文件
 	if err := os.WriteFile(plistPath, []byte(plistContent), 0644); err != nil {
 		return fmt.Errorf("写入plist文件失败: %v", err)
 	}
-	
+
 	// 加载plist文件
 	loadCmd := exec.Command("launchctl", "load", plistPath)
 	if err := loadCmd.Run(); err != nil {
 		logger.Warnf("加载启动项警告: %v", err)
 		// 继续执行，因为plist文件已创建，下次登录时会生效
 	}
-	
+
 	logger.Info("已添加macOS系统自启动项")
 	return nil
 }
@@ -175,7 +175,7 @@ func (h *SystemHandler) setMacOSAutoStart(executable string) error {
 func (h *SystemHandler) removeMacOSAutoStart() error {
 	homeDir := utils.GetHomeDir()
 	plistPath := filepath.Join(homeDir, "Library", "LaunchAgents", "com.shuakami.clashrule-sync.plist")
-	
+
 	// 检查文件是否存在
 	if _, err := os.Stat(plistPath); err == nil {
 		// 卸载plist文件
@@ -183,13 +183,13 @@ func (h *SystemHandler) removeMacOSAutoStart() error {
 		if err := unloadCmd.Run(); err != nil {
 			logger.Warnf("卸载启动项警告: %v", err)
 		}
-		
+
 		// 删除plist文件
 		if err := os.Remove(plistPath); err != nil {
 			logger.Warnf("删除plist文件警告: %v", err)
 		}
 	}
-	
+
 	logger.Info("已移除macOS系统自启动项")
 	return nil
 }
@@ -197,16 +197,16 @@ func (h *SystemHandler) removeMacOSAutoStart() error {
 // Linux系统自启动设置
 func (h *SystemHandler) setLinuxAutoStart(executable string) error {
 	homeDir := utils.GetHomeDir()
-	
+
 	// 创建.config/autostart目录
 	autostartDir := filepath.Join(homeDir, ".config", "autostart")
 	err := utils.EnsureDirExists(autostartDir)
 	if err != nil {
 		return fmt.Errorf("创建autostart目录失败: %v", err)
 	}
-	
+
 	desktopFilePath := filepath.Join(autostartDir, "clashrule-sync.desktop")
-	
+
 	// 创建desktop文件内容
 	desktopContent := fmt.Sprintf(`[Desktop Entry]
 Type=Application
@@ -216,21 +216,21 @@ Terminal=false
 StartupNotify=false
 Hidden=false
 X-GNOME-Autostart-enabled=true`, executable)
-	
+
 	// 写入desktop文件
 	if err := os.WriteFile(desktopFilePath, []byte(desktopContent), 0644); err != nil {
 		return fmt.Errorf("写入desktop文件失败: %v", err)
 	}
-	
+
 	logger.Info("已添加Linux系统自启动项")
-	
+
 	// 另一种实现方式：通过systemd用户单元（可选）
 	systemdUserDir := filepath.Join(homeDir, ".config", "systemd", "user")
-	
+
 	// 检查systemd用户目录是否存在
 	if _, err := os.Stat(systemdUserDir); err == nil {
 		serviceFilePath := filepath.Join(systemdUserDir, "clashrule-sync.service")
-		
+
 		// 创建systemd服务文件内容
 		serviceContent := fmt.Sprintf(`[Unit]
 Description=ClashRuleSync - Clash Rule Automatic Sync Tool
@@ -243,7 +243,7 @@ RestartSec=5
 
 [Install]
 WantedBy=default.target`, executable)
-		
+
 		// 写入服务文件
 		if err := os.WriteFile(serviceFilePath, []byte(serviceContent), 0644); err != nil {
 			logger.Warnf("写入systemd服务文件警告: %v", err)
@@ -253,23 +253,23 @@ WantedBy=default.target`, executable)
 			if err := enableCmd.Run(); err != nil {
 				logger.Warnf("启用systemd服务警告: %v", err)
 			}
-			
+
 			// 尝试启动服务
 			startCmd := exec.Command("systemctl", "--user", "start", "clashrule-sync.service")
 			if err := startCmd.Run(); err != nil {
 				logger.Warnf("启动systemd服务警告: %v", err)
 			}
-			
+
 			logger.Info("已添加Linux systemd用户服务")
 		}
 	}
-	
+
 	return nil
 }
 
 func (h *SystemHandler) removeLinuxAutoStart() error {
 	homeDir := utils.GetHomeDir()
-	
+
 	// 删除desktop文件
 	desktopFilePath := filepath.Join(homeDir, ".config", "autostart", "clashrule-sync.desktop")
 	if _, err := os.Stat(desktopFilePath); err == nil {
@@ -277,29 +277,29 @@ func (h *SystemHandler) removeLinuxAutoStart() error {
 			logger.Warnf("删除desktop文件警告: %v", err)
 		}
 	}
-	
+
 	// 检查并移除systemd服务
 	systemdUserDir := filepath.Join(homeDir, ".config", "systemd", "user")
 	serviceFilePath := filepath.Join(systemdUserDir, "clashrule-sync.service")
-	
+
 	if _, err := os.Stat(serviceFilePath); err == nil {
 		// 停止并禁用服务
 		stopCmd := exec.Command("systemctl", "--user", "stop", "clashrule-sync.service")
 		if err := stopCmd.Run(); err != nil {
 			logger.Warnf("停止systemd服务警告: %v", err)
 		}
-		
+
 		disableCmd := exec.Command("systemctl", "--user", "disable", "clashrule-sync.service")
 		if err := disableCmd.Run(); err != nil {
 			logger.Warnf("禁用systemd服务警告: %v", err)
 		}
-		
+
 		// 删除服务文件
 		if err := os.Remove(serviceFilePath); err != nil {
 			logger.Warnf("删除systemd服务文件警告: %v", err)
 		}
 	}
-	
+
 	logger.Info("已移除Linux系统自启动项")
 	return nil
-} 
+}

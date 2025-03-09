@@ -41,7 +41,7 @@ const configCacheTTL = 5 * time.Minute
 func NewClashAPI(baseURL, secret string) *ClashAPI {
 	// 使用工具函数规范化URL
 	baseURL = utils.NormalizeURL(baseURL)
-	
+
 	// 创建带有超时的 HTTP 客户端
 	client := &http.Client{
 		Timeout: 10 * time.Second,
@@ -51,7 +51,7 @@ func NewClashAPI(baseURL, secret string) *ClashAPI {
 			IdleConnTimeout:     60 * time.Second,
 		},
 	}
-	
+
 	return &ClashAPI{
 		baseURL: baseURL,
 		secret:  secret,
@@ -62,14 +62,14 @@ func NewClashAPI(baseURL, secret string) *ClashAPI {
 // TestConnection 测试与 Clash API 的连接
 func (c *ClashAPI) TestConnection() (bool, error) {
 	log.Printf("尝试连接到Clash API: %s", c.baseURL)
-	
+
 	// 尝试不同的API路径，以支持不同版本的Clash
 	endpoints := []string{"/version", "/"}
-	
+
 	var lastErr error
 	for _, endpoint := range endpoints {
 		log.Printf("尝试API端点: %s", endpoint)
-		
+
 		// 发送请求
 		resp, err := c.doRequest("GET", endpoint, nil)
 		if err != nil {
@@ -77,7 +77,7 @@ func (c *ClashAPI) TestConnection() (bool, error) {
 			lastErr = err
 			continue
 		}
-		
+
 		// 即使能连接，也检查下状态码
 		if resp.StatusCode != http.StatusOK {
 			resp.Body.Close()
@@ -85,7 +85,7 @@ func (c *ClashAPI) TestConnection() (bool, error) {
 			lastErr = fmt.Errorf("API返回状态码: %d", resp.StatusCode)
 			continue
 		}
-		
+
 		// 读取并关闭响应体
 		body, err := io.ReadAll(resp.Body)
 		resp.Body.Close()
@@ -94,11 +94,11 @@ func (c *ClashAPI) TestConnection() (bool, error) {
 			lastErr = err
 			continue
 		}
-		
+
 		log.Printf("成功连接到Clash API端点 %s，响应: %s", endpoint, string(body[:utils.Min(100, len(body))]))
 		return true, nil
 	}
-	
+
 	log.Printf("所有API端点连接尝试均失败，最后错误: %v", lastErr)
 	return false, lastErr
 }
@@ -113,7 +113,7 @@ func (c *ClashAPI) GetConfig() (*ClashConfig, error) {
 		return &config, nil
 	}
 	c.mutex.RUnlock()
-	
+
 	// 缓存无效，需要请求新数据
 	resp, err := c.doRequest("GET", "/configs", nil)
 	if err != nil {
@@ -126,7 +126,7 @@ func (c *ClashAPI) GetConfig() (*ClashConfig, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&config); err != nil {
 		return nil, fmt.Errorf("解析配置响应失败: %v", err)
 	}
-	
+
 	// 更新缓存
 	c.mutex.Lock()
 	c.configCache = &config
@@ -146,12 +146,12 @@ func (c *ClashAPI) ReloadConfig() error {
 
 	log.Printf("已更新 Clash 配置文件: %s", settingsPath)
 	log.Println("成功完成配置更新")
-	
+
 	// 清除配置缓存
 	c.mutex.Lock()
 	c.configCache = nil
 	c.mutex.Unlock()
-	
+
 	return nil
 }
 
@@ -163,12 +163,12 @@ func (c *ClashAPI) UpdateRuleProviders(providerNames []string) error {
 
 	var wg sync.WaitGroup
 	errs := make(chan error, len(providerNames))
-	
+
 	for _, name := range providerNames {
 		wg.Add(1)
 		go func(name string) {
 			defer wg.Done()
-			
+
 			endpoint := fmt.Sprintf("/providers/rules/%s", name)
 			resp, err := c.doRequest("PUT", endpoint, nil)
 			if err != nil {
@@ -186,17 +186,17 @@ func (c *ClashAPI) UpdateRuleProviders(providerNames []string) error {
 			log.Printf("成功更新规则提供者: %s", name)
 		}(name)
 	}
-	
+
 	// 等待所有更新完成
 	wg.Wait()
 	close(errs)
-	
+
 	// 收集所有错误
 	var errMsgs []string
 	for err := range errs {
 		errMsgs = append(errMsgs, err.Error())
 	}
-	
+
 	if len(errMsgs) > 0 {
 		return fmt.Errorf("部分规则提供者更新失败: %s", strings.Join(errMsgs, "; "))
 	}
@@ -208,7 +208,7 @@ func (c *ClashAPI) UpdateRuleProviders(providerNames []string) error {
 func (c *ClashAPI) doRequest(method, path string, body io.Reader) (*http.Response, error) {
 	// 构造完整的 URL
 	url := c.baseURL + path
-	
+
 	// 如果有请求体，先读取内容用于日志
 	var bodyBytes []byte
 	if body != nil {
@@ -218,15 +218,15 @@ func (c *ClashAPI) doRequest(method, path string, body io.Reader) (*http.Respons
 			log.Printf("读取请求体失败: %v", err)
 			return nil, err
 		}
-		
+
 		if log.Default().Writer() != io.Discard { // 仅在开启日志时才记录
 			log.Printf("请求体: %s", string(bodyBytes))
 		}
-		
+
 		// 重新创建 reader
 		body = bytes.NewBuffer(bodyBytes)
 	}
-	
+
 	// 创建请求
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
@@ -262,7 +262,7 @@ func (c *ClashAPI) SetRuleProviderConfig(name, url, path, behavior, interval str
 		"behavior": behavior,
 		"interval": interval,
 	}
-	
+
 	// 将请求体转换为 JSON
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
@@ -271,7 +271,7 @@ func (c *ClashAPI) SetRuleProviderConfig(name, url, path, behavior, interval str
 
 	// 构造请求路径
 	endpoint := fmt.Sprintf("/providers/rules/%s", name)
-	
+
 	// 发送请求
 	resp, err := c.doRequest("PUT", endpoint, bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -348,24 +348,24 @@ func readClashConfig(configPath string) (string, int, string, error) {
 	matchController := reController.FindSubmatch(data)
 	if len(matchController) > 1 {
 		controllerConfig := strings.TrimSpace(string(matchController[1]))
-		
+
 		// 解析地址和端口
 		reAddr := regexp.MustCompile(`(127\.0\.0\.1|localhost):(\d+)`)
 		matchAddr := reAddr.FindStringSubmatch(controllerConfig)
-		
+
 		if len(matchAddr) > 2 {
 			host := matchAddr[1]
 			port, err := strconv.Atoi(matchAddr[2])
 			if err == nil {
 				url := fmt.Sprintf("http://%s:%d", host, port)
-				
+
 				// 提取密钥配置
 				matchSecret := reSecret.FindSubmatch(data)
 				if len(matchSecret) > 1 {
 					secret := strings.TrimSpace(string(matchSecret[1]))
 					return url, port, secret, nil
 				}
-				
+
 				return url, port, defaultSecret, nil
 			}
 		}
@@ -385,7 +385,7 @@ func GetClashCFWSettingsPath() string {
 
 	// Clash for Windows设置文件路径
 	cfwSettingsPath := filepath.Join(homeDir, ".config", "clash", "cfw-settings.yaml")
-	
+
 	// 检查文件是否存在
 	if _, err := os.Stat(cfwSettingsPath); os.IsNotExist(err) {
 		// 尝试备用路径
@@ -394,7 +394,7 @@ func GetClashCFWSettingsPath() string {
 			return ""
 		}
 	}
-	
+
 	return cfwSettingsPath
 }
 
@@ -407,13 +407,13 @@ func ReadClashCFWSettings(settingsPath string) (string, error) {
 			return "", fmt.Errorf("未找到CFW设置文件")
 		}
 	}
-	
+
 	// 读取文件内容
 	data, err := os.ReadFile(settingsPath)
 	if err != nil {
 		return "", fmt.Errorf("读取CFW设置文件失败: %v", err)
 	}
-	
+
 	return string(data), nil
 }
 
@@ -422,15 +422,15 @@ func GetBypassRules(settingsContent string) (string, error) {
 	// 使用正则表达式提取bypassText部分
 	re := regexp.MustCompile(`(?m)^bypassText:\s*\|([\s\S]*?)(?:^[a-zA-Z]|$)`)
 	matches := re.FindStringSubmatch(settingsContent)
-	
+
 	if len(matches) < 2 {
 		return "", fmt.Errorf("未找到bypassText配置")
 	}
-	
+
 	// 提取内容部分
 	content := matches[1]
 	content = strings.TrimSpace(content)
-	
+
 	return content, nil
 }
 
@@ -441,40 +441,40 @@ func UpdateBypassRules(settingsPath string, newBypassRules string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// 使用正则表达式匹配bypassText部分
 	re := regexp.MustCompile(`(?m)(^bypassText:\s*\|)([\s\S]*?)((?:^[a-zA-Z]|$))`)
-	
+
 	// 确保新规则有正确的缩进格式
 	indentedRules := ensureIndentation(newBypassRules, 2)
-	
+
 	// 替换bypassText内容
 	if re.MatchString(settingsContent) {
 		// 如果找到了bypassText，替换内容，确保下一行有换行和正确缩进
 		updatedContent := re.ReplaceAllString(settingsContent, "${1}\n"+indentedRules+"\n$3")
-		
+
 		// 写入文件前验证格式
 		verifyRe := regexp.MustCompile(`bypassText:\s*\|\n\s{2}bypass:`)
 		if !verifyRe.MatchString(updatedContent) {
 			log.Println("警告：生成的配置格式可能不正确，尝试修正...")
-			
+
 			// 如果格式不符合预期，尝试手动修正
 			bypassFixRe := regexp.MustCompile(`(bypassText:\s*\|)\n(bypass:)`)
 			if bypassFixRe.MatchString(updatedContent) {
 				updatedContent = bypassFixRe.ReplaceAllString(updatedContent, "${1}\n  ${2}")
 			}
 		}
-		
+
 		// 写入文件
 		err = os.WriteFile(settingsPath, []byte(updatedContent), 0644)
 		if err != nil {
 			return fmt.Errorf("写入CFW设置文件失败: %v", err)
 		}
-		
+
 		log.Println("成功更新绕过规则")
 		return nil
 	}
-	
+
 	return fmt.Errorf("未找到bypassText配置")
 }
 
@@ -482,7 +482,7 @@ func UpdateBypassRules(settingsPath string, newBypassRules string) error {
 func ensureIndentation(text string, spaces int) string {
 	lines := strings.Split(text, "\n")
 	indent := strings.Repeat(" ", spaces)
-	
+
 	var result []string
 	for i, line := range lines {
 		trimmedLine := strings.TrimSpace(line)
@@ -490,13 +490,13 @@ func ensureIndentation(text string, spaces int) string {
 		if trimmedLine == "" {
 			continue
 		}
-		
+
 		if i == 0 && strings.HasPrefix(trimmedLine, "bypass:") {
 			// 第一行 'bypass:' 保持正确缩进
 			result = append(result, indent+"bypass:")
 			continue
 		}
-		
+
 		// 处理列表项
 		if strings.HasPrefix(trimmedLine, "-") {
 			item := strings.TrimSpace(strings.TrimPrefix(trimmedLine, "-"))
@@ -512,7 +512,7 @@ func ensureIndentation(text string, spaces int) string {
 			result = append(result, indent+trimmedLine)
 		}
 	}
-	
+
 	return strings.Join(result, "\n")
 }
 
@@ -523,27 +523,27 @@ func AddRuleToBypass(rule string) error {
 	if settingsPath == "" {
 		return fmt.Errorf("未找到CFW设置文件")
 	}
-	
+
 	// 读取当前设置
 	settingsContent, err := ReadClashCFWSettings(settingsPath)
 	if err != nil {
 		return err
 	}
-	
+
 	// 获取当前绕过规则
 	bypassRules, err := GetBypassRules(settingsContent)
 	if err != nil {
 		return err
 	}
-	
+
 	// 检查规则是否已存在
 	if strings.Contains(bypassRules, rule) {
 		return nil // 规则已存在，无需添加
 	}
-	
+
 	// 解析现有规则结构
 	lines := strings.Split(bypassRules, "\n")
-	
+
 	// 找到适合插入的位置
 	insertPos := len(lines)
 	for i, line := range lines {
@@ -551,15 +551,15 @@ func AddRuleToBypass(rule string) error {
 		if strings.HasPrefix(trimmedLine, "#") || trimmedLine == "" {
 			continue // 跳过注释和空行
 		}
-		
+
 		if strings.HasPrefix(trimmedLine, "bypass:") {
 			continue // 跳过bypass:行
 		}
-		
+
 		// 默认在最后一个规则后插入
 		insertPos = i + 1
 	}
-	
+
 	// 插入新规则
 	newRule := "  - '" + rule + "'"
 	if insertPos >= len(lines) {
@@ -567,7 +567,7 @@ func AddRuleToBypass(rule string) error {
 	} else {
 		lines = append(lines[:insertPos], append([]string{newRule}, lines[insertPos:]...)...)
 	}
-	
+
 	// 更新绕过规则
 	updatedBypass := strings.Join(lines, "\n")
 	return UpdateBypassRules(settingsPath, updatedBypass)
@@ -580,19 +580,19 @@ func SyncBypassRulesFromDomainList(domainRules string) error {
 	if settingsPath == "" {
 		return fmt.Errorf("未找到CFW设置文件")
 	}
-	
+
 	// 读取当前设置
 	settingsContent, err := ReadClashCFWSettings(settingsPath)
 	if err != nil {
 		return err
 	}
-	
+
 	log.Printf("成功读取CFW设置文件，大小: %d 字节", len(settingsContent))
-	
+
 	// 解析域名规则
 	domains := parseDomainRules(domainRules)
 	log.Printf("处理 %d 个域名规则", len(domains))
-	
+
 	// 构建新的绕过规则
 	staticRules := []string{
 		"localhost",
@@ -609,22 +609,22 @@ func SyncBypassRulesFromDomainList(domainRules string) error {
 		"192.168.*",
 		"<local>",
 	}
-	
+
 	var bypassLines []string
 	bypassLines = append(bypassLines, "bypass:")
-	
+
 	// 添加静态规则
 	for _, rule := range staticRules {
 		bypassLines = append(bypassLines, "  - "+rule)
 	}
-	
+
 	// 添加域名规则
 	for _, domain := range domains {
 		bypassLines = append(bypassLines, "  - "+domain)
 	}
-	
+
 	log.Printf("最终构建的绕过规则包含 %d 个静态规则和 %d 个域名规则", len(staticRules), len(domains))
-	
+
 	// 更新绕过规则
 	newBypass := strings.Join(bypassLines, "\n")
 	return UpdateBypassRules(settingsPath, newBypass)
@@ -634,23 +634,23 @@ func SyncBypassRulesFromDomainList(domainRules string) error {
 func parseDomainRules(rulesText string) []string {
 	var domains []string
 	lines := strings.Split(rulesText, "\n")
-	
+
 	inPayloadSection := false
-	
+
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		
+
 		// 跳过空行和注释
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
-		
+
 		// 检测payload部分开始
 		if strings.HasPrefix(line, "payload:") {
 			inPayloadSection = true
 			continue
 		}
-		
+
 		// 处理规则行
 		if inPayloadSection || !strings.Contains(line, ":") {
 			// 这可能是一个payload格式的域名项 (- 'domain.com')
@@ -668,6 +668,6 @@ func parseDomainRules(rulesText string) []string {
 			}
 		}
 	}
-	
+
 	return domains
 }

@@ -51,11 +51,11 @@ func (h *PageHandler) HandleIndex(w http.ResponseWriter, r *http.Request) {
 
 	// 准备模板数据
 	data := map[string]interface{}{
-		"Version":        h.Version,
-		"BuildID":        time.Now().Format("060102"),
-		"LastUpdateTime": h.Config.LastUpdateTime.Format("2006-01-02 15:04:05"),
-		"NextUpdateTime": h.Config.LastUpdateTime.Add(h.Config.UpdateInterval).Format("2006-01-02 15:04:05"),
-		"AutoStartEnabled": h.Config.AutoStartEnabled,
+		"Version":                h.Version,
+		"BuildID":                time.Now().Format("060102"),
+		"LastUpdateTime":         h.Config.LastUpdateTime.Format("2006-01-02 15:04:05"),
+		"NextUpdateTime":         h.Config.LastUpdateTime.Add(h.Config.UpdateInterval).Format("2006-01-02 15:04:05"),
+		"AutoStartEnabled":       h.Config.AutoStartEnabled,
 		"SystemAutoStartEnabled": h.Config.SystemAutoStartEnabled,
 	}
 
@@ -102,23 +102,23 @@ func (h *PageHandler) HandleTestConnection(w http.ResponseWriter, r *http.Reques
 		ClashAPIURL    string `json:"clash_api_url"`
 		ClashAPISecret string `json:"clash_api_secret"`
 	}
-	
+
 	if !common.ParseJSON(w, r, &req) {
 		return
 	}
 
 	// 创建临时API客户端来测试连接
 	tempAPI := api.NewClashAPI(req.ClashAPIURL, req.ClashAPISecret)
-	
+
 	// 测试连接
 	connected, err := tempAPI.TestConnection()
-	
+
 	// 构建响应
 	resp := map[string]interface{}{
 		"status":    "ok",
 		"connected": connected,
 	}
-	
+
 	// 如果连接失败，添加错误信息
 	if !connected {
 		resp["message"] = "无法连接到Clash API"
@@ -143,18 +143,18 @@ func (h *PageHandler) HandleSetup(w http.ResponseWriter, r *http.Request) {
 	rawBody, _ = io.ReadAll(r.Body)
 	r.Body.Close()
 	logger.Printf("Setup 原始请求体: %s", string(rawBody))
-	
+
 	// 重新创建请求体以供后续处理
 	r.Body = io.NopCloser(bytes.NewBuffer(rawBody))
 
 	// 解析请求
 	var req struct {
-		ClashAPIURL            string `json:"clashApiUrl"`           // 修正字段名与前端匹配
-		ClashAPISecret         string `json:"clashApiSecret"`        
-		UpdateInterval         int64  `json:"updateInterval"`        // 小写开头
-		AutoStartEnabled       bool   `json:"autoStartEnabled"`      // 小写开头
-		SystemAutoStartEnabled bool   `json:"systemAutoStartEnabled"`// 小写开头
-		SelectedRules          []struct {  // 接收前端发送的规则列表
+		ClashAPIURL            string     `json:"clashApiUrl"` // 修正字段名与前端匹配
+		ClashAPISecret         string     `json:"clashApiSecret"`
+		UpdateInterval         int64      `json:"updateInterval"`         // 小写开头
+		AutoStartEnabled       bool       `json:"autoStartEnabled"`       // 小写开头
+		SystemAutoStartEnabled bool       `json:"systemAutoStartEnabled"` // 小写开头
+		SelectedRules          []struct { // 接收前端发送的规则列表
 			Name string `json:"name"`
 			URL  string `json:"url"`
 			Type string `json:"type"`
@@ -164,8 +164,8 @@ func (h *PageHandler) HandleSetup(w http.ResponseWriter, r *http.Request) {
 	if !common.ParseJSON(w, r, &req) {
 		return
 	}
-	
-	logger.Printf("Setup 请求数据: API URL=%s, 更新间隔=%d小时, 自启动=%v, 系统自启动=%v", 
+
+	logger.Printf("Setup 请求数据: API URL=%s, 更新间隔=%d小时, 自启动=%v, 系统自启动=%v",
 		req.ClashAPIURL, req.UpdateInterval, req.AutoStartEnabled, req.SystemAutoStartEnabled)
 	logger.Printf("Setup 选中规则数量: %d", len(req.SelectedRules))
 
@@ -173,10 +173,10 @@ func (h *PageHandler) HandleSetup(w http.ResponseWriter, r *http.Request) {
 	logger.Println("Setup: 更新配置...")
 	h.Config.ClashAPIURL = req.ClashAPIURL
 	h.Config.ClashAPISecret = req.ClashAPISecret
-	h.Config.UpdateInterval = time.Duration(req.UpdateInterval) * time.Hour  // 将小时转换为 Duration
+	h.Config.UpdateInterval = time.Duration(req.UpdateInterval) * time.Hour // 将小时转换为 Duration
 	h.Config.AutoStartEnabled = req.AutoStartEnabled
 	h.Config.SystemAutoStartEnabled = req.SystemAutoStartEnabled
-	h.Config.FirstRun = false  // 设置标记表示已完成首次设置
+	h.Config.FirstRun = false // 设置标记表示已完成首次设置
 
 	// 根据规则设置更新规则提供者
 	// 清空现有规则
@@ -187,19 +187,19 @@ func (h *PageHandler) HandleSetup(w http.ResponseWriter, r *http.Request) {
 	logger.Println("Setup: 添加用户选择的规则...")
 	for _, rule := range req.SelectedRules {
 		logger.Printf("Setup: 添加规则 %s, URL=%s, 类型=%s", rule.Name, rule.URL, rule.Type)
-		
+
 		// 根据规则类型确定behavior
 		behavior := rule.Type
 		if behavior == "classical" {
 			behavior = "classical"
 		}
-		
+
 		// 生成规则路径
 		ruleName := strings.ReplaceAll(rule.Name, " ", "_")
 		ruleName = strings.ReplaceAll(ruleName, ":", "")
 		ruleName = strings.ReplaceAll(ruleName, "/", "_")
 		rulePath := fmt.Sprintf("rules/%s.yaml", ruleName)
-		
+
 		// 添加规则
 		h.Config.RuleProviders = append(h.Config.RuleProviders, config.RuleProvider{
 			Name:     ruleName,
@@ -221,14 +221,12 @@ func (h *PageHandler) HandleSetup(w http.ResponseWriter, r *http.Request) {
 	logger.Println("Setup: 配置保存成功")
 
 	// 创建规则目录
-	rulesDir := common.GetRulesDir()
-	logger.Printf("Setup: 检查规则目录 %s...", rulesDir)
-	var err error
-	rulesDir, err = common.EnsureRulesDir()
+	logger.Println("Setup: 检查规则目录...")
+	rulesDir, err := common.EnsureRulesDir()
 	if err != nil {
 		logger.Printf("Setup: 警告: 创建规则目录失败: %v", err)
 	} else {
-		logger.Println("Setup: 规则目录检查/创建成功")
+		logger.Printf("Setup: 规则目录检查/创建成功: %s", rulesDir)
 	}
 
 	// 确保所有规则都正确标记了 Enabled 状态

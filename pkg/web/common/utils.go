@@ -76,4 +76,4 @@ func OpenBrowser(url string) error {
 func runCommand(command string, args ...string) error {
 	cmd := utils.CreateCommand(command, args...)
 	return cmd.Start()
-} 
+}

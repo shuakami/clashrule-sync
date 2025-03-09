@@ -229,4 +229,4 @@ func listLogFiles(logDir string) ([]string, error) {
 	}
 
 	return result, nil
-} 
+}

@@ -111,4 +111,4 @@ func CreateHiddenWindowsProcess(command string, args ...string) *exec.Cmd {
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	return cmd
-} 
+}

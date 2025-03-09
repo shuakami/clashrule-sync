@@ -27,16 +27,16 @@ const appName = "ClashRuleSync"
 
 // 服务配置
 type program struct {
-	cfg           *config.Config
+	cfg            *config.Config
 	processMonitor *process.ProcessMonitor
-	ruleUpdater   *rules.RuleUpdater
-	clashAPI      *api.ClashAPI
-	webServer     *web.WebServer
-	updateTicker  *time.Ticker
+	ruleUpdater    *rules.RuleUpdater
+	clashAPI       *api.ClashAPI
+	webServer      *web.WebServer
+	updateTicker   *time.Ticker
 	logCleanTicker *time.Ticker // 日志清理定时器
-	stopChan      chan struct{}
-	ctx           context.Context
-	cancel        context.CancelFunc
+	stopChan       chan struct{}
+	ctx            context.Context
+	cancel         context.CancelFunc
 }
 
 func (p *program) Start(s service.Service) error {
@@ -47,33 +47,33 @@ func (p *program) Start(s service.Service) error {
 func (p *program) Stop(s service.Service) error {
 	// 清理工作
 	logger.Info("ClashRuleSync 服务停止")
-	
+
 	// 取消上下文
 	p.cancel()
-	
+
 	// 停止更新定时器
 	if p.updateTicker != nil {
 		p.updateTicker.Stop()
 	}
-	
+
 	// 停止日志清理定时器
 	if p.logCleanTicker != nil {
 		p.logCleanTicker.Stop()
 	}
-	
+
 	// 停止进程监控
 	if p.processMonitor != nil {
 		p.processMonitor.Stop()
 	}
-	
+
 	// 停止 Web 服务器
 	if p.webServer != nil {
 		p.webServer.Stop()
 	}
-	
+
 	// 关闭停止通道
 	close(p.stopChan)
-	
+
 	return nil
 }
 
@@ -101,7 +101,7 @@ func (p *program) run() {
 		Compress:   cfg.LogConfig.Compress,
 	}
 	logger.ApplyConfig(logConfig)
-	
+
 	// 启动日志清理定时器
 	p.startLogCleanTicker()
 
@@ -115,7 +115,7 @@ func (p *program) run() {
 		cfg.ClashAPIURL = apiURL
 		cfg.ClashAPIPort = apiPort
 		cfg.ClashAPISecret = apiSecret
-		
+
 		// 保存配置
 		err = cfg.SaveConfig()
 		if err != nil {
@@ -138,37 +138,37 @@ func (p *program) run() {
 	// 定义 Clash 启动和停止的回调函数
 	onClashStart := func() {
 		logger.Info("检测到 Clash 启动，激活服务...")
-		
+
 		// 启动 Web 服务器
 		err := p.webServer.Start()
 		if err != nil {
 			logger.Errorf("启动 Web 服务器失败: %v", err)
 		}
-		
+
 		// 启动规则更新定时器
 		p.startUpdateTicker()
-		
+
 		// 首次启动时尝试更新规则
 		go func() {
 			// 等待一段时间，确保 Clash 完全启动
 			time.Sleep(5 * time.Second)
-			
+
 			// 尝试更新规则
 			success, err := p.ruleUpdater.UpdateAllRules()
 			if err != nil {
 				logger.Errorf("首次更新规则失败: %v", err)
 			} else if success {
 				logger.Info("首次更新规则成功")
-				
+
 				// 保存配置
 				p.cfg.SaveConfig()
-				
+
 				// 尝试重新加载 Clash 配置
 				err = p.clashAPI.ReloadConfig()
 				if err != nil {
 					logger.Errorf("重新加载 Clash 配置失败: %v", err)
 				}
-				
+
 				// 安全重启 Clash
 				logger.Info("正在重启 Clash 以应用新规则...")
 				err = process.RestartClash()
@@ -183,13 +183,13 @@ func (p *program) run() {
 
 	onClashStop := func() {
 		logger.Info("检测到 Clash 停止，暂停服务...")
-		
+
 		// 停止更新定时器
 		if p.updateTicker != nil {
 			p.updateTicker.Stop()
 			p.updateTicker = nil
 		}
-		
+
 		// 停止 Web 服务器
 		if p.webServer != nil {
 			p.webServer.Stop()
@@ -213,7 +213,7 @@ func (p *program) startUpdateTicker() {
 
 	// 创建新的定时器
 	p.updateTicker = time.NewTicker(p.cfg.UpdateInterval)
-	
+
 	// 在新的 goroutine 中处理定时更新
 	go func() {
 		for {
@@ -223,26 +223,26 @@ func (p *program) startUpdateTicker() {
 				if !p.processMonitor.IsClashRunning() {
 					continue
 				}
-				
+
 				logger.Info("定时更新规则...")
 				success, err := p.ruleUpdater.UpdateAllRules()
 				if err != nil {
 					logger.Errorf("定时更新规则失败: %v", err)
 					continue
 				}
-				
+
 				if success {
 					logger.Info("定时更新规则成功")
-					
+
 					// 保存配置
 					p.cfg.SaveConfig()
-					
+
 					// 尝试重新加载 Clash 配置
 					err = p.clashAPI.ReloadConfig()
 					if err != nil {
 						logger.Errorf("重新加载 Clash 配置失败: %v", err)
 					}
-					
+
 					// 安全重启 Clash
 					logger.Info("正在重启 Clash 以应用新规则...")
 					err = process.RestartClash()
@@ -268,10 +268,10 @@ func (p *program) startLogCleanTicker() {
 
 	// 创建新的定时器，每天执行一次日志清理
 	p.logCleanTicker = time.NewTicker(24 * time.Hour)
-	
+
 	// 立即执行一次日志清理
 	logger.CleanOldLogs()
-	
+
 	// 在新的 goroutine 中处理定时清理
 	go func() {
 		for {
@@ -289,9 +289,9 @@ func (p *program) startLogCleanTicker() {
 func main() {
 	// 解析命令行参数
 	var (
-		showVersion    = flag.Bool("v", false, "显示版本信息")
-		runAsService   = flag.Bool("service", false, "作为服务运行")
-		installService = flag.Bool("install", false, "安装为系统服务")
+		showVersion      = flag.Bool("v", false, "显示版本信息")
+		runAsService     = flag.Bool("service", false, "作为服务运行")
+		installService   = flag.Bool("install", false, "安装为系统服务")
 		uninstallService = flag.Bool("uninstall", false, "卸载系统服务")
 	)
 	flag.Parse()
@@ -366,4 +366,4 @@ func main() {
 
 	// 尝试停止服务
 	s.Stop()
-} 
+}

@@ -15,16 +15,16 @@ import (
 // Config 存储程序配置
 type Config struct {
 	// 基本配置
-	ClashAPIURL          string        `json:"clash_api_url"`
-	ClashAPIPort         int           `json:"clash_api_port"`
-	ClashAPISecret       string        `json:"clash_api_secret"`
-	ClashConfigPath      string        `json:"clash_config_path"`
-	WebPort              int           `json:"web_port"`
-	UpdateInterval       time.Duration `json:"update_interval"`
-	FirstRun             bool          `json:"first_run"`
-	LastUpdateTime       time.Time     `json:"last_update_time"`
-	AutoStartEnabled     bool          `json:"auto_start_enabled"`
-	SystemAutoStartEnabled bool        `json:"system_auto_start_enabled"`
+	ClashAPIURL            string        `json:"clash_api_url"`
+	ClashAPIPort           int           `json:"clash_api_port"`
+	ClashAPISecret         string        `json:"clash_api_secret"`
+	ClashConfigPath        string        `json:"clash_config_path"`
+	WebPort                int           `json:"web_port"`
+	UpdateInterval         time.Duration `json:"update_interval"`
+	FirstRun               bool          `json:"first_run"`
+	LastUpdateTime         time.Time     `json:"last_update_time"`
+	AutoStartEnabled       bool          `json:"auto_start_enabled"`
+	SystemAutoStartEnabled bool          `json:"system_auto_start_enabled"`
 
 	// 日志配置
 	LogConfig struct {
@@ -37,7 +37,7 @@ type Config struct {
 
 	// 规则源配置
 	RuleProviders []RuleProvider `json:"rule_providers"`
-	
+
 	// 配置文件路径缓存
 	configPath string
 	// 互斥锁，防止并发写入
@@ -57,26 +57,26 @@ type RuleProvider struct {
 // DefaultConfig 返回默认配置
 func DefaultConfig() *Config {
 	cfg := &Config{
-		ClashAPIURL:          "http://127.0.0.1:9090",
-		ClashAPIPort:         9090,
-		ClashAPISecret:       "",
-		ClashConfigPath:      "",
-		WebPort:              8899,
-		UpdateInterval:       12 * time.Hour,
-		FirstRun:             true,
-		LastUpdateTime:       time.Time{},
-		AutoStartEnabled:     true,
+		ClashAPIURL:            "http://127.0.0.1:9090",
+		ClashAPIPort:           9090,
+		ClashAPISecret:         "",
+		ClashConfigPath:        "",
+		WebPort:                8899,
+		UpdateInterval:         12 * time.Hour,
+		FirstRun:               true,
+		LastUpdateTime:         time.Time{},
+		AutoStartEnabled:       true,
 		SystemAutoStartEnabled: true,
-		RuleProviders: []RuleProvider{},
+		RuleProviders:          []RuleProvider{},
 	}
-	
+
 	// 设置默认日志配置
 	cfg.LogConfig.LogLevel = "info"
-	cfg.LogConfig.MaxSize = 10    // MB
-	cfg.LogConfig.MaxBackups = 5  // 文件个数
-	cfg.LogConfig.MaxAge = 30     // 天
+	cfg.LogConfig.MaxSize = 10   // MB
+	cfg.LogConfig.MaxBackups = 5 // 文件个数
+	cfg.LogConfig.MaxAge = 30    // 天
 	cfg.LogConfig.Compress = true
-	
+
 	return cfg
 }
 
@@ -106,7 +106,7 @@ func LoadConfig(filepath string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("解析配置文件失败: %v", err)
 	}
-	
+
 	// 保存配置文件路径
 	config.configPath = filepath
 
@@ -123,7 +123,7 @@ func LoadConfig(filepath string) (*Config, error) {
 func (c *Config) SaveConfig() error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	
+
 	filePath := c.configPath
 	if filePath == "" {
 		filePath = GetConfigPath()
@@ -155,7 +155,7 @@ func (c *Config) SaveConfig() error {
 func (c *Config) UpdateLastUpdateTime() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	
+
 	c.LastUpdateTime = time.Now()
 }
 
@@ -169,11 +169,11 @@ func GetConfigPath() string {
 func (c *Config) GetRuleProvider(name string) *RuleProvider {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
-	
+
 	for i := range c.RuleProviders {
 		if c.RuleProviders[i].Name == name {
 			return &c.RuleProviders[i]
 		}
 	}
 	return nil
-} 
+}

@@ -80,4 +80,4 @@ func isStaticFile(path string) bool {
 // isAPIPath 判断是否是API路径
 func isAPIPath(path string) bool {
 	return len(path) >= 4 && path[:4] == "/api"
-} 
+}
