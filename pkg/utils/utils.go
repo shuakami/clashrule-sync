@@ -94,8 +94,7 @@ func FileExists(path string) bool {
 
 // CreateBackgroundProcess 创建后台进程
 func CreateBackgroundProcess(command string, args ...string) *exec.Cmd {
-	cmd := exec.Command(command, args...)
-	return cmd
+	return exec.Command(command, args...)
 }
 
 // CreateHiddenWindowsProcess 创建一个在Windows上隐藏窗口的进程
@@ -108,4 +107,17 @@ func CreateHiddenWindowsProcess(command string, args ...string) *exec.Cmd {
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	return cmd
+}
+
+// GetExecutableDir 获取可执行文件所在目录
+func GetExecutableDir() (string, error) {
+	// 获取当前可执行文件路径
+	execPath, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+	
+	// 获取可执行文件所在目录
+	execDir := filepath.Dir(execPath)
+	return execDir, nil
 }

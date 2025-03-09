@@ -26,11 +26,24 @@ func LoadTemplate(templateName string) (*template.Template, error) {
 		return tmpl, nil
 	}
 
-	// 加载模板
-	templatePath := filepath.Join("templates", templateName)
+	// 获取执行文件所在目录
+	execDir, err := utils.GetExecutableDir()
+	if err != nil {
+		logger.Errorf("获取执行文件目录失败: %v", err)
+		// 尝试使用相对路径作为后备方案
+		execDir = "."
+	}
+
+	// 加载模板，使用平台无关的路径拼接
+	templatePath := filepath.Join(execDir, "templates", templateName)
 	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
-		return nil, err
+		// 如果在执行目录中找不到模板，尝试在当前工作目录中查找
+		templatePathFallback := filepath.Join("templates", templateName)
+		tmpl, err = template.ParseFiles(templatePathFallback)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// 缓存模板
