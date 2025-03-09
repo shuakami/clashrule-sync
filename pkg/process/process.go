@@ -381,10 +381,8 @@ func tryRestartFromCache(cachedPath string, cachedArgs []string) bool {
 		cmd = exec.Command(cachedPath)
 	}
 	
-	// 将进程设置为后台运行
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		CreationFlags: 0x08000000, // CREATE_NO_WINDOW
-	}
+	// 将进程设置为后台运行（跨平台处理）
+	setNoWindowFlag(cmd)
 	
 	err := cmd.Start()
 	if err != nil {
@@ -449,10 +447,8 @@ func RestartClash() error {
 			cmd = exec.Command(procInfo.path)
 		}
 		
-		// 将进程设置为后台运行
-		cmd.SysProcAttr = &syscall.SysProcAttr{
-			CreationFlags: 0x08000000, // CREATE_NO_WINDOW
-		}
+		// 将进程设置为后台运行（跨平台处理）
+		setNoWindowFlag(cmd)
 		
 		err = cmd.Start()
 		if err != nil {
