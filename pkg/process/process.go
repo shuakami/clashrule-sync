@@ -12,7 +12,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"syscall"
 
 	"github.com/shirou/gopsutil/process"
 	"github.com/shuakami/clashrule-sync/pkg/utils"
