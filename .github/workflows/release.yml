@@ -50,7 +50,7 @@ jobs:
       - name: Prepare Package
         run: |
           mkdir -p release
-          echo "请勿删除templates目录！此目录包含程序运行所需的网页模板文件，必须与主程序放在同一目录下。" > "重要说明-不要删除templates文件夹.txt"
+          echo "请勿删除templates和static目录！这些目录包含程序运行所需的网页模板和配置文件，必须与主程序放在同一目录下。" > "重要说明-不要删除templates和static文件夹.txt"
           if [ "${{ matrix.goos }}" = "windows" ]; then
             mkdir -p windows_package
             cp "ClashRuleSync${{ matrix.extension }}" windows_package/
@@ -58,7 +58,7 @@ jobs:
             cp README.md windows_package/
             cp -r templates windows_package/
             cp -r static windows_package/
-            cp "重要说明-不要删除templates、static文件夹.txt" windows_package/
+            cp "重要说明-不要删除templates和static文件夹.txt" windows_package/
             cd windows_package
             ${{ matrix.compress_cmd }} ../release/${{ matrix.asset_name }} *
           else
@@ -68,7 +68,7 @@ jobs:
             cp README.md package/
             cp -r templates package/
             cp -r static package/
-            cp "重要说明-不要删除templates、static文件夹.txt" package/
+            cp "重要说明-不要删除templates和static文件夹.txt" package/
             cd package
             ${{ matrix.compress_cmd }} ../release/${{ matrix.asset_name }} *
           fi
