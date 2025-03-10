@@ -57,7 +57,8 @@ jobs:
             cp LICENSE windows_package/
             cp README.md windows_package/
             cp -r templates windows_package/
-            cp "重要说明-不要删除templates文件夹.txt" windows_package/
+            cp -r static windows_package/
+            cp "重要说明-不要删除templates、static文件夹.txt" windows_package/
             cd windows_package
             ${{ matrix.compress_cmd }} ../release/${{ matrix.asset_name }} *
           else
@@ -66,7 +67,8 @@ jobs:
             cp LICENSE package/
             cp README.md package/
             cp -r templates package/
-            cp "重要说明-不要删除templates文件夹.txt" package/
+            cp -r static package/
+            cp "重要说明-不要删除templates、static文件夹.txt" package/
             cd package
             ${{ matrix.compress_cmd }} ../release/${{ matrix.asset_name }} *
           fi
