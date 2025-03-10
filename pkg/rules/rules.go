@@ -317,60 +317,95 @@ func (ru *RuleUpdater) downloadAndProcessRule(provider config.RuleProvider, outp
 		return errors.Wrap(err, "创建输出目录失败")
 	}
 
-	// 下载规则文件
-	resp, err := ru.client.Get(provider.URL)
-	if err != nil {
-		return errors.Wrap(err, "下载规则失败")
-	}
-	defer resp.Body.Close()
+	// 设置重试参数
+	maxRetries := 3
+	retryDelay := 3 * time.Second
+	var lastErr error
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("下载规则失败，状态码: %d", resp.StatusCode)
-	}
+	// 使用重试机制下载规则
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		// 下载规则文件
+		resp, err := ru.client.Get(provider.URL)
+		if err != nil {
+			lastErr = err
+			// 检查是否为EOF错误，这是常见的网络问题
+			if err.Error() == "EOF" || strings.Contains(err.Error(), "EOF") {
+				logger.Warnf("下载规则 %s 遇到EOF错误，正在重试(%d/%d)...", provider.Name, attempt, maxRetries)
+				time.Sleep(retryDelay)
+				continue
+			}
+			
+			// 其他错误也尝试重试
+			logger.Warnf("下载规则 %s 失败: %v，正在重试(%d/%d)...", provider.Name, err, attempt, maxRetries)
+			time.Sleep(retryDelay)
+			continue
+		}
+		
+		if resp.StatusCode != http.StatusOK {
+			resp.Body.Close()
+			lastErr = fmt.Errorf("下载规则失败，状态码: %d", resp.StatusCode)
+			logger.Warnf("下载规则 %s 失败，状态码: %d，正在重试(%d/%d)...", provider.Name, resp.StatusCode, attempt, maxRetries)
+			time.Sleep(retryDelay)
+			continue
+		}
 
-	// 读取响应内容
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return errors.Wrap(err, "读取响应内容失败")
-	}
+		// 读取响应内容
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		
+		if err != nil {
+			lastErr = errors.Wrap(err, "读取响应内容失败")
+			logger.Warnf("读取规则 %s 内容失败: %v，正在重试(%d/%d)...", provider.Name, err, attempt, maxRetries)
+			time.Sleep(retryDelay)
+			continue
+		}
 
-	// 处理规则内容
-	content := string(body)
+		// 处理规则内容
+		content := string(body)
 
-	// 检查内容是否已经是YAML格式
-	if strings.Contains(content, "payload:") ||
-		strings.Contains(content, "bypass:") ||
-		strings.Contains(content, "domain:") ||
-		strings.Contains(content, "ip-cidr:") {
-		// 已经是YAML格式，直接写入
-		err = os.WriteFile(outputPath, body, 0644)
+		// 检查内容是否已经是YAML格式
+		if strings.Contains(content, "payload:") ||
+			strings.Contains(content, "bypass:") ||
+			strings.Contains(content, "domain:") ||
+			strings.Contains(content, "ip-cidr:") {
+			// 已经是YAML格式，直接写入
+			err = os.WriteFile(outputPath, body, 0644)
+			if err != nil {
+				return errors.Wrap(err, "写入规则文件失败")
+			}
+			return nil
+		}
+		
+		// 根据类型处理规则
+		var processedRules string
+		switch provider.Type {
+		case "domain":
+			processedRules = processDomainRules(content, provider.Name)
+		case "ipcidr":
+			processedRules = processIPCIDRRules(content, provider.Name)
+		case "mixed":
+			processedRules = processMixedRules(content, provider.Name)
+		default:
+			// 默认作为混合规则处理
+			processedRules = processMixedRules(content, provider.Name)
+		}
+
+		// 写入文件
+		err = os.WriteFile(outputPath, []byte(processedRules), 0644)
 		if err != nil {
 			return errors.Wrap(err, "写入规则文件失败")
 		}
+
+		// 处理成功，返回nil
 		return nil
 	}
 
-	// 根据类型处理规则
-	var processedRules string
-	switch provider.Type {
-	case "domain":
-		processedRules = processDomainRules(content, provider.Name)
-	case "ipcidr":
-		processedRules = processIPCIDRRules(content, provider.Name)
-	case "mixed":
-		processedRules = processMixedRules(content, provider.Name)
-	default:
-		// 默认作为混合规则处理
-		processedRules = processMixedRules(content, provider.Name)
+	// 所有重试都失败，返回最后一次错误
+	if lastErr != nil {
+		return errors.Wrap(lastErr, "下载规则失败")
 	}
-
-	// 写入文件
-	err = os.WriteFile(outputPath, []byte(processedRules), 0644)
-	if err != nil {
-		return errors.Wrap(err, "写入规则文件失败")
-	}
-
-	return nil
+	
+	return fmt.Errorf("下载规则失败，达到最大重试次数")
 }
 
 // processDomainRules 处理域名规则

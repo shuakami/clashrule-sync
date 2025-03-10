@@ -16,7 +16,7 @@ import (
 )
 
 // Version 应用程序版本
-const Version = "0.1.9"
+const Version = "0.1.10"
 
 // WebServer 表示 Web 服务器
 type WebServer struct {
