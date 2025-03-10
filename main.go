@@ -20,7 +20,7 @@ import (
 )
 
 // 程序版本
-const version = "0.1.12"
+const version = "0.1.13"
 
 // 程序名称
 const appName = "ClashRuleSync"

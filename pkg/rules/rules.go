@@ -3,6 +3,7 @@ package rules
 import (
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -42,13 +43,33 @@ type ProviderRecord struct {
 
 // NewRuleUpdater 创建一个新的规则更新器
 func NewRuleUpdater(cfg *config.Config) *RuleUpdater {
-	// 创建一个自定义的HTTP客户端用于规则下载
+	// 创建一个更健壮的HTTP客户端用于规则下载
+	dialer := &net.Dialer{
+		Timeout:   15 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}
+	
+	transport := &http.Transport{
+		Proxy:                 http.ProxyFromEnvironment,
+		DialContext:           dialer.DialContext,
+		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   10,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		ResponseHeaderTimeout: 30 * time.Second,
+		DisableCompression:    false, // 启用压缩，但通过头部控制
+	}
+	
 	client := &http.Client{
-		Timeout: 30 * time.Second,
-		Transport: &http.Transport{
-			MaxIdleConns:        20,
-			MaxIdleConnsPerHost: 10,
-			IdleConnTimeout:     60 * time.Second,
+		Timeout:   45 * time.Second, // 更长的总超时
+		Transport: transport,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			// 允许最多5次重定向
+			if len(via) >= 5 {
+				return fmt.Errorf("停止在%d次重定向后", len(via))
+			}
+			return nil
 		},
 	}
 
@@ -309,6 +330,33 @@ func (ru *RuleUpdater) getRulesDir() string {
 	return filepath.Join(configDir, "rules")
 }
 
+// 生成备用URL的函数
+func generateBackupUrls(originalUrl string) []string {
+	// 存储原URL和所有备用URL
+	urls := []string{originalUrl}
+	
+	// 如果是jsdelivr的URL，添加备用CDN
+	if strings.Contains(originalUrl, "cdn.jsdelivr.net") {
+		// 替换为fastgit镜像
+		fastgitUrl := strings.Replace(originalUrl, "cdn.jsdelivr.net/gh", "raw.fastgit.org", 1)
+		urls = append(urls, fastgitUrl)
+		
+		// 替换为jsdelivr的备用域名
+		backupJsdelivrUrl := strings.Replace(originalUrl, "cdn.jsdelivr.net", "fastly.jsdelivr.net", 1)
+		urls = append(urls, backupJsdelivrUrl)
+		
+		// 替换为GitHub直接链接
+		if strings.Contains(originalUrl, "cdn.jsdelivr.net/gh/") {
+			// 提取用户/仓库/分支部分
+			parts := strings.Split(originalUrl, "cdn.jsdelivr.net/gh/")[1]
+			githubUrl := "https://raw.githubusercontent.com/" + parts
+			urls = append(urls, githubUrl)
+		}
+	}
+	
+	return urls
+}
+
 // downloadAndProcessRule 下载并处理规则
 func (ru *RuleUpdater) downloadAndProcessRule(provider config.RuleProvider, outputPath string) error {
 	// 确保输出目录存在
@@ -316,96 +364,137 @@ func (ru *RuleUpdater) downloadAndProcessRule(provider config.RuleProvider, outp
 	if err := utils.EnsureDirExists(outputDir); err != nil {
 		return errors.Wrap(err, "创建输出目录失败")
 	}
-
+	
+	// 生成主URL和所有备用URL
+	urls := generateBackupUrls(provider.URL)
+	
 	// 设置重试参数
 	maxRetries := 3
 	retryDelay := 3 * time.Second
 	var lastErr error
-
-	// 使用重试机制下载规则
-	for attempt := 1; attempt <= maxRetries; attempt++ {
-		// 下载规则文件
-		resp, err := ru.client.Get(provider.URL)
-		if err != nil {
-			lastErr = err
-			// 检查是否为EOF错误，这是常见的网络问题
-			if err.Error() == "EOF" || strings.Contains(err.Error(), "EOF") {
-				logger.Warnf("下载规则 %s 遇到EOF错误，正在重试(%d/%d)...", provider.Name, attempt, maxRetries)
+	
+	// 为每个URL尝试下载
+	for urlIndex, currentUrl := range urls {
+		logger.Infof("尝试从源 #%d (%s) 下载规则 %s", urlIndex+1, currentUrl, provider.Name)
+		
+		// 对每个URL进行多次重试
+		for attempt := 1; attempt <= maxRetries; attempt++ {
+			// 创建一个特定的HTTP请求，设置更多选项
+			req, err := http.NewRequest("GET", currentUrl, nil)
+			if err != nil {
+				lastErr = err
+				logger.Warnf("创建HTTP请求失败: %v", err)
+				continue
+			}
+			
+			// 设置UA和一些头部，有助于绕过某些限制
+			req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+			req.Header.Set("Accept", "text/plain,text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+			req.Header.Set("Connection", "close") // 禁用keep-alive，减少EOF风险
+			
+			// 使用客户端有超时设置的Do方法发送请求
+			resp, err := ru.client.Do(req)
+			if err != nil {
+				lastErr = err
+				// 检查是否为EOF错误
+				if err.Error() == "EOF" || strings.Contains(err.Error(), "EOF") {
+					logger.Warnf("下载规则 %s 从源 #%d 遇到EOF错误，正在重试(%d/%d)...", 
+						provider.Name, urlIndex+1, attempt, maxRetries)
+					time.Sleep(retryDelay)
+					continue
+				}
+				
+				// 其他错误也尝试重试
+				logger.Warnf("下载规则 %s 从源 #%d 失败: %v，正在重试(%d/%d)...", 
+					provider.Name, urlIndex+1, err, attempt, maxRetries)
 				time.Sleep(retryDelay)
 				continue
 			}
 			
-			// 其他错误也尝试重试
-			logger.Warnf("下载规则 %s 失败: %v，正在重试(%d/%d)...", provider.Name, err, attempt, maxRetries)
-			time.Sleep(retryDelay)
-			continue
-		}
-		
-		if resp.StatusCode != http.StatusOK {
+			// 检查响应状态
+			if resp.StatusCode != http.StatusOK {
+				resp.Body.Close()
+				lastErr = fmt.Errorf("下载规则失败，状态码: %d", resp.StatusCode)
+				logger.Warnf("下载规则 %s 从源 #%d 失败，状态码: %d，正在重试(%d/%d)...", 
+					provider.Name, urlIndex+1, resp.StatusCode, attempt, maxRetries)
+				time.Sleep(retryDelay)
+				continue
+			}
+			
+			// 读取响应内容
+			body, err := io.ReadAll(resp.Body)
 			resp.Body.Close()
-			lastErr = fmt.Errorf("下载规则失败，状态码: %d", resp.StatusCode)
-			logger.Warnf("下载规则 %s 失败，状态码: %d，正在重试(%d/%d)...", provider.Name, resp.StatusCode, attempt, maxRetries)
-			time.Sleep(retryDelay)
-			continue
-		}
+			
+			if err != nil {
+				lastErr = errors.Wrap(err, "读取响应内容失败")
+				logger.Warnf("读取规则 %s 从源 #%d 内容失败: %v，正在重试(%d/%d)...", 
+					provider.Name, urlIndex+1, err, attempt, maxRetries)
+				time.Sleep(retryDelay)
+				continue
+			}
+			
+			// 内容验证：确保有实际的内容
+			if len(body) < 10 { // 内容太少可能是无效的
+				lastErr = fmt.Errorf("规则内容太小，可能无效")
+				logger.Warnf("规则 %s 从源 #%d 内容太小(%d字节)，正在重试(%d/%d)...", 
+					provider.Name, urlIndex+1, len(body), attempt, maxRetries)
+				time.Sleep(retryDelay)
+				continue
+			}
 
-		// 读取响应内容
-		body, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
-		
-		if err != nil {
-			lastErr = errors.Wrap(err, "读取响应内容失败")
-			logger.Warnf("读取规则 %s 内容失败: %v，正在重试(%d/%d)...", provider.Name, err, attempt, maxRetries)
-			time.Sleep(retryDelay)
-			continue
-		}
+			// 处理规则内容
+			content := string(body)
 
-		// 处理规则内容
-		content := string(body)
+			// 检查内容是否已经是YAML格式
+			if strings.Contains(content, "payload:") ||
+				strings.Contains(content, "bypass:") ||
+				strings.Contains(content, "domain:") ||
+				strings.Contains(content, "ip-cidr:") {
+				// 已经是YAML格式，直接写入
+				err = os.WriteFile(outputPath, body, 0644)
+				if err != nil {
+					return errors.Wrap(err, "写入规则文件失败")
+				}
+				logger.Infof("成功从源 #%d (%s) 下载规则 %s", urlIndex+1, currentUrl, provider.Name)
+				return nil
+			}
+			
+			// 根据类型处理规则
+			var processedRules string
+			switch provider.Type {
+			case "domain":
+				processedRules = processDomainRules(content, provider.Name)
+			case "ipcidr":
+				processedRules = processIPCIDRRules(content, provider.Name)
+			case "mixed":
+				processedRules = processMixedRules(content, provider.Name)
+			default:
+				// 默认作为混合规则处理
+				processedRules = processMixedRules(content, provider.Name)
+			}
 
-		// 检查内容是否已经是YAML格式
-		if strings.Contains(content, "payload:") ||
-			strings.Contains(content, "bypass:") ||
-			strings.Contains(content, "domain:") ||
-			strings.Contains(content, "ip-cidr:") {
-			// 已经是YAML格式，直接写入
-			err = os.WriteFile(outputPath, body, 0644)
+			// 写入文件
+			err = os.WriteFile(outputPath, []byte(processedRules), 0644)
 			if err != nil {
 				return errors.Wrap(err, "写入规则文件失败")
 			}
+
+			// 处理成功，返回nil
+			logger.Infof("成功从源 #%d (%s) 下载规则 %s", urlIndex+1, currentUrl, provider.Name)
 			return nil
 		}
 		
-		// 根据类型处理规则
-		var processedRules string
-		switch provider.Type {
-		case "domain":
-			processedRules = processDomainRules(content, provider.Name)
-		case "ipcidr":
-			processedRules = processIPCIDRRules(content, provider.Name)
-		case "mixed":
-			processedRules = processMixedRules(content, provider.Name)
-		default:
-			// 默认作为混合规则处理
-			processedRules = processMixedRules(content, provider.Name)
-		}
-
-		// 写入文件
-		err = os.WriteFile(outputPath, []byte(processedRules), 0644)
-		if err != nil {
-			return errors.Wrap(err, "写入规则文件失败")
-		}
-
-		// 处理成功，返回nil
-		return nil
+		// 当前URL的所有重试都失败了，尝试下一个URL
+		logger.Warnf("规则 %s 从源 #%d (%s) 的所有重试均失败，尝试下一个源...", 
+			provider.Name, urlIndex+1, currentUrl)
 	}
 
-	// 所有重试都失败，返回最后一次错误
+	// 所有URL和重试都失败，返回最后一次错误
 	if lastErr != nil {
-		return errors.Wrap(lastErr, "下载规则失败")
+		return errors.Wrap(lastErr, "从所有源下载规则失败")
 	}
 	
-	return fmt.Errorf("下载规则失败，达到最大重试次数")
+	return fmt.Errorf("从所有源下载规则失败，达到最大重试次数")
 }
 
 // processDomainRules 处理域名规则
